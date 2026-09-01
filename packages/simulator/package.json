@@ -1,0 +1,15 @@
+{
+  "name": "@nightlight/simulator",
+  "version": "0.1.0",
+  "description": "Deterministic demo household: generates a realistic month of Ring events, including the nights that matter. Always labeled Simulated in every UI.",
+  "license": "MIT",
+  "type": "module",
+  "main": "src/index.ts",
+  "types": "src/index.ts",
+  "scripts": {
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@nightlight/engine": "0.1.0"
+  }
+}

@@ -1,0 +1,12 @@
+{
+  "name": "@nightlight/engine",
+  "version": "0.1.0",
+  "description": "Deterministic, explainable night-pattern engine: per-household baselines, anomaly scoring, and the incident state machine. No ML black boxes on the detection path.",
+  "license": "MIT",
+  "type": "module",
+  "main": "src/index.ts",
+  "types": "src/index.ts",
+  "scripts": {
+    "test": "vitest run"
+  }
+}

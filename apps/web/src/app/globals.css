@@ -1,0 +1,142 @@
+@import "tailwindcss";
+
+/*
+  Nightlight design tokens.
+  Light values live on :root. Dark values are defined twice: once for the
+  system preference (guarded so an explicit light choice wins) and once for
+  the explicit data-theme="dark" choice, so the manual toggle wins in both
+  directions. Every color in the app must come from these tokens.
+*/
+
+:root {
+  --bg: #fafaf8;
+  --surface: #ffffff;
+  --surface-raised: #ffffff;
+  --text: #1a1d21;
+  --text-muted: #57606a;
+  --border: #e4e7eb;
+  --focus-ring: #2c5aa0;
+
+  --primary: #2c5aa0;
+  --primary-contrast: #ffffff;
+  --accent: #b26b15;
+  --accent-soft: #f7ecd9;
+  --success: #2e7d5b;
+  --success-soft: #e3f1ea;
+  --danger: #b3402e;
+  --danger-soft: #f7e6e2;
+  --night: #14233a;
+  --night-soft: #e8eef7;
+
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 16px;
+  --shadow-sm: 0 1px 2px rgb(20 35 58 / 0.06), 0 1px 3px rgb(20 35 58 / 0.08);
+  --shadow-md: 0 4px 16px rgb(20 35 58 / 0.1);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0e1116;
+    --surface: #161b22;
+    --surface-raised: #1c232c;
+    --text: #f0f3f6;
+    --text-muted: #9aa4af;
+    --border: #2a313a;
+    --focus-ring: #7fb4e8;
+
+    --primary: #7fb4e8;
+    --primary-contrast: #0e1116;
+    --accent: #e8a13d;
+    --accent-soft: #2a2417;
+    --success: #5bbd94;
+    --success-soft: #14261e;
+    --danger: #e07b6a;
+    --danger-soft: #2a1a17;
+    --night: #7fb4e8;
+    --night-soft: #16202e;
+
+    --shadow-sm: 0 1px 2px rgb(0 0 0 / 0.4);
+    --shadow-md: 0 4px 16px rgb(0 0 0 / 0.5);
+  }
+}
+
+:root[data-theme="dark"] {
+  --bg: #0e1116;
+  --surface: #161b22;
+  --surface-raised: #1c232c;
+  --text: #f0f3f6;
+  --text-muted: #9aa4af;
+  --border: #2a313a;
+  --focus-ring: #7fb4e8;
+
+  --primary: #7fb4e8;
+  --primary-contrast: #0e1116;
+  --accent: #e8a13d;
+  --accent-soft: #2a2417;
+  --success: #5bbd94;
+  --success-soft: #14261e;
+  --danger: #e07b6a;
+  --danger-soft: #2a1a17;
+  --night: #7fb4e8;
+  --night-soft: #16202e;
+
+  --shadow-sm: 0 1px 2px rgb(0 0 0 / 0.4);
+  --shadow-md: 0 4px 16px rgb(0 0 0 / 0.5);
+}
+
+@theme inline {
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-surface-raised: var(--surface-raised);
+  --color-ink: var(--text);
+  --color-muted: var(--text-muted);
+  --color-line: var(--border);
+  --color-primary: var(--primary);
+  --color-primary-contrast: var(--primary-contrast);
+  --color-accent: var(--accent);
+  --color-accent-soft: var(--accent-soft);
+  --color-success: var(--success);
+  --color-success-soft: var(--success-soft);
+  --color-danger: var(--danger);
+  --color-danger-soft: var(--danger-soft);
+  --color-night: var(--night);
+  --color-night-soft: var(--night-soft);
+  --radius-sm: var(--radius-sm);
+  --radius-md: var(--radius-md);
+  --radius-lg: var(--radius-lg);
+}
+
+html {
+  color-scheme: light dark;
+  scroll-behavior: smooth;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-feature-settings: "cv02", "cv03", "cv04";
+  -webkit-font-smoothing: antialiased;
+}
+
+*:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+::selection {
+  background: var(--accent);
+  color: #ffffff;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

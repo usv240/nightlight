@@ -1,0 +1,20 @@
+{
+  "name": "@nightlight/backend",
+  "version": "0.1.0",
+  "description": "Nightlight backend: verified Ring webhook intake, the night engine, incident effects, and the caregiver API.",
+  "license": "MIT",
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch src/server.ts",
+    "start": "tsx src/server.ts",
+    "demo": "tsx src/demo.ts",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@fastify/cors": "^10.0.0",
+    "@nightlight/engine": "0.1.0",
+    "@nightlight/simulator": "0.1.0",
+    "fastify": "^5.0.0",
+    "ring-webhook-kit": "0.1.0"
+  }
+}

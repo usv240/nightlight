@@ -1,0 +1,14 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "rootDir": "src",
+    "outDir": "dist",
+    "composite": true
+  },
+  "include": ["src"],
+  "references": [
+    { "path": "../../packages/engine" },
+    { "path": "../../packages/simulator" },
+    { "path": "../../packages/ring-webhook-kit" }
+  ]
+}

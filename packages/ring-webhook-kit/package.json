@@ -1,0 +1,19 @@
+{
+  "name": "ring-webhook-kit",
+  "version": "0.1.0",
+  "description": "Verified intake for Ring Partner API webhooks: HMAC SHA-256 signature verification, typed event payloads, and idempotent deduplication. Framework-agnostic, zero dependencies.",
+  "license": "MIT",
+  "type": "module",
+  "main": "src/index.ts",
+  "types": "src/index.ts",
+  "keywords": [
+    "ring",
+    "webhook",
+    "hmac",
+    "amazon-vision",
+    "smart-home"
+  ],
+  "scripts": {
+    "test": "vitest run"
+  }
+}
