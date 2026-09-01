@@ -5,6 +5,7 @@ import type { RingEvent, RingEventType } from "@nightlight/engine";
 import { generateDemoMonth, toWebhookEnvelope } from "@nightlight/simulator";
 import { DemoAdapters } from "./adapters";
 import { HouseholdRuntime } from "./household";
+import { registerMcp } from "./mcp";
 
 /**
  * Nightlight backend service.
@@ -142,6 +143,8 @@ export function buildServer() {
   });
 
   app.get("/healthz", async () => ({ ok: true }));
+
+  registerMcp(app, runtime);
 
   return { app, runtime, adapters };
 }

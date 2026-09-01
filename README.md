@@ -13,6 +13,7 @@ Built for the Build, Ship, Shape: Amazon Developer Hackathon (Ring track, plus t
 3. Incidents: a pure, unit-tested state machine: voice first, then a gentle caregiver notification, then escalation contacts (`packages/engine`)
 4. Adapters: voice delivery (Ring chime audio where the device capability exists, Echo announcement fallback), snapshots, push and SMS (`apps/backend`)
 5. Demo household: a deterministic simulated month replayed through the real webhook route, always labeled Simulated (`packages/simulator`)
+6. Agent surface: an MCP server (Model Context Protocol spec 2025-11-25, Streamable HTTP) at `/mcp`, so Alexa+ or any MCP client can ask about the household's nights, check status, and acknowledge an incident hands-free (`apps/backend/src/mcp.ts`, conformance-tested: sessions, protocol version header, origin validation)
 
 Detection is deterministic and explainable end to end. Language models are used only to phrase summaries, never to decide.
 
@@ -30,6 +31,20 @@ Try the API:
 ```
 curl -X POST http://127.0.0.1:8787/api/demo/replay -H "content-type: application/json" -d "{}"
 curl http://127.0.0.1:8787/api/summary
+```
+
+Talk to it as an agent (MCP over Streamable HTTP):
+
+```
+curl -i -X POST http://127.0.0.1:8787/mcp \
+  -H "content-type: application/json" \
+  -H "accept: application/json, text/event-stream" \
+  -d '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-11-25","capabilities":{},"clientInfo":{"name":"curl","version":"0"}}}'
+# take the MCP-Session-Id response header, then:
+curl -X POST http://127.0.0.1:8787/mcp \
+  -H "content-type: application/json" \
+  -H "mcp-session-id: <SESSION-ID>" \
+  -d '{"jsonrpc":"2.0","id":2,"method":"tools/call","params":{"name":"get_night_summary","arguments":{"date":"2026-09-23"}}}'
 ```
 
 ## Repository layout
