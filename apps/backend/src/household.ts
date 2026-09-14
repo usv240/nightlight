@@ -1,6 +1,5 @@
 import {
   DEFAULT_CONFIG,
-  type CaregiverAck,
   type Effect,
   type HouseholdConfig,
   type NightSummary,
@@ -10,24 +9,23 @@ import {
   summarizeNights,
   undisturbedStreak,
 } from "@nightlight/engine";
+import type { NightlightStore, EffectExecutionRecord } from "./store";
 
 /**
- * In-process household runtime.
+ * Household runtime.
  *
- * The event log is the source of truth; every read model (incidents, nights,
- * baseline) is a deterministic replay of it, so the live webhook path, the
- * demo replay, and the tests can never disagree. New effects are diffed by
- * key so adapters run exactly once per effect. At household scale a full
- * replay per event is microseconds; DynamoDB persistence and an incremental
- * runtime are deployment work, not engine work.
+ * The event log in the store is the source of truth; every read model
+ * (incidents, nights, baseline) is a deterministic replay of it, so the
+ * live webhook path, the demo replay, and the tests can never disagree.
+ *
+ * Effects are executed at most once across any number of backend
+ * instances: an effect is first CLAIMED through the store (a conditional
+ * write) and dispatched only by the claimer. On Lambda this is what keeps
+ * two concurrent invocations from playing the 3am voice prompt twice.
+ *
+ * A full replay per request is O(events) and costs microseconds at
+ * household scale (hundreds of events a month); correctness first.
  */
-
-export interface EffectExecution {
-  effect: Effect;
-  executedAt: string;
-  adapter: string;
-  detail: string;
-}
 
 export interface Adapters {
   playVoice: (incidentId: string, at: string) => Promise<string>;
@@ -36,72 +34,71 @@ export interface Adapters {
   escalate: (incidentId: string, at: string) => Promise<string>;
 }
 
+export interface HouseholdSnapshot {
+  incidents: TimelineResult["incidents"];
+  effects: Effect[];
+  baselineDays: number;
+  nights: NightSummary[];
+  undisturbedStreak: number;
+  executions: EffectExecutionRecord[];
+}
+
 export class HouseholdRuntime {
   readonly config: HouseholdConfig;
-  private events: RingEvent[] = [];
-  private acks: CaregiverAck[] = [];
-  private executed = new Map<string, EffectExecution>();
-  private cache: TimelineResult | null = null;
 
   constructor(
+    private readonly store: NightlightStore,
     private readonly adapters: Adapters,
     config?: Partial<HouseholdConfig>,
   ) {
     this.config = { householdId: "default", ...DEFAULT_CONFIG, ...config };
   }
 
-  get eventCount(): number {
-    return this.events.length;
+  private get householdId(): string {
+    return this.config.householdId;
   }
 
   private effectKey(e: Effect): string {
     return `${e.kind}:${e.incidentId}:${e.at}`;
   }
 
-  private recompute(): TimelineResult {
-    if (!this.cache) {
-      this.cache = processTimeline(this.events, this.config, { acks: this.acks });
-    }
-    return this.cache;
-  }
-
-  private invalidate(): void {
-    this.cache = null;
+  private async replay(): Promise<TimelineResult> {
+    const [events, acks] = await Promise.all([
+      this.store.listEvents(this.householdId),
+      this.store.listAcks(this.householdId),
+    ]);
+    return processTimeline(events, this.config, { acks });
   }
 
   async ingestEvent(event: RingEvent): Promise<Effect[]> {
-    this.events.push(event);
-    this.events.sort((a, b) => (a.ts < b.ts ? -1 : 1));
-    this.invalidate();
+    await this.store.appendEvent(this.householdId, event);
     return this.executeNewEffects();
   }
 
   async ingestBatch(events: RingEvent[]): Promise<Effect[]> {
-    this.events.push(...events);
-    this.events.sort((a, b) => (a.ts < b.ts ? -1 : 1));
-    this.invalidate();
+    for (const event of events) {
+      await this.store.appendEvent(this.householdId, event);
+    }
     return this.executeNewEffects();
   }
 
   async acknowledge(at: string): Promise<Effect[]> {
-    this.acks.push({ at });
-    this.invalidate();
+    await this.store.appendAck(this.householdId, { at });
     return this.executeNewEffects();
   }
 
   private async executeNewEffects(): Promise<Effect[]> {
-    const { effects } = this.recompute();
+    const { effects } = await this.replay();
     const fresh: Effect[] = [];
     for (const effect of effects) {
       const key = this.effectKey(effect);
-      if (this.executed.has(key)) continue;
-      const detail = await this.dispatch(effect);
-      this.executed.set(key, {
-        effect,
+      // Claim before dispatch: at most one instance ever executes an effect.
+      const claimed = await this.store.claimEffect(this.householdId, key, {
         executedAt: new Date().toISOString(),
-        adapter: effect.kind,
-        detail,
+        detail: effect.kind,
       });
+      if (!claimed) continue;
+      await this.dispatch(effect);
       fresh.push(effect);
     }
     return fresh;
@@ -120,17 +117,11 @@ export class HouseholdRuntime {
     }
   }
 
-  snapshot(): {
-    incidents: TimelineResult["incidents"];
-    effects: Effect[];
-    baselineDays: number;
-    nights: NightSummary[];
-    undisturbedStreak: number;
-    executions: EffectExecution[];
-  } {
-    const result = this.recompute();
-    const first = this.events[0]?.ts ?? new Date().toISOString();
-    const last = this.events[this.events.length - 1]?.ts ?? first;
+  async snapshot(): Promise<HouseholdSnapshot> {
+    const result = await this.replay();
+    const events = await this.store.listEvents(this.householdId);
+    const first = events[0]?.ts ?? new Date().toISOString();
+    const last = events[events.length - 1]?.ts ?? first;
     const nights = summarizeNights(
       first,
       last,
@@ -144,14 +135,11 @@ export class HouseholdRuntime {
       baselineDays: result.baseline.daysObserved,
       nights,
       undisturbedStreak: undisturbedStreak(nights),
-      executions: [...this.executed.values()],
+      executions: await this.store.listExecutions(this.householdId),
     };
   }
 
-  reset(): void {
-    this.events = [];
-    this.acks = [];
-    this.executed.clear();
-    this.invalidate();
+  async reset(): Promise<void> {
+    await this.store.reset(this.householdId);
   }
 }

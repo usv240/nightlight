@@ -22,7 +22,7 @@ import { InfoButton } from "../../components/InfoButton";
  * engine, clearly labeled.
  */
 
-const BACKEND = "http://127.0.0.1:8787";
+const BACKEND = (process.env.NEXT_PUBLIC_BACKEND_URL ?? "http://127.0.0.1:8787").replace(/\/$/, "");
 
 interface SummaryData {
   nights: NightSummary[];

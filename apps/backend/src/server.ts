@@ -6,6 +6,8 @@ import { generateDemoMonth, toWebhookEnvelope } from "@nightlight/simulator";
 import { DemoAdapters } from "./adapters";
 import { HouseholdRuntime } from "./household";
 import { registerMcp } from "./mcp";
+import { MemoryStore, type NightlightStore } from "./store";
+import { phraseMorningNote } from "./summaries";
 
 /**
  * Nightlight backend service.
@@ -26,10 +28,11 @@ import { registerMcp } from "./mcp";
 const RING_SECRET = process.env.RING_WEBHOOK_SECRET ?? "";
 const DEMO_SECRET = process.env.DEMO_WEBHOOK_SECRET ?? "nightlight-demo-secret";
 
-export function buildServer() {
+export function buildServer(opts: { store?: NightlightStore } = {}) {
   const app = Fastify({ logger: false });
   const adapters = new DemoAdapters();
-  const runtime = new HouseholdRuntime(adapters, { householdId: "demo-house" });
+  const store = opts.store ?? new MemoryStore();
+  const runtime = new HouseholdRuntime(store, adapters, { householdId: "demo-house" });
   const deduper = new Deduper();
 
   // Capture the raw body for signature verification before JSON parsing.
@@ -90,7 +93,7 @@ export function buildServer() {
 
   app.post("/api/demo/replay", async (req, reply) => {
     const { seed } = (req.body as { json?: { seed?: number } })?.json ?? {};
-    runtime.reset();
+    await runtime.reset();
     adapters.journal.length = 0;
     const demo = generateDemoMonth(seed ?? 42);
     // Drive the real webhook route for fidelity: sign, post, verify, dedupe.
@@ -106,7 +109,7 @@ export function buildServer() {
         payload: envelope,
       });
     }
-    const snap = runtime.snapshot();
+    const snap = await runtime.snapshot();
     return reply.send({
       simulated: true,
       events: demo.events.length,
@@ -118,7 +121,7 @@ export function buildServer() {
   });
 
   app.get("/api/summary", async () => {
-    const snap = runtime.snapshot();
+    const snap = await runtime.snapshot();
     return {
       simulated: true,
       baselineDays: snap.baselineDays,
@@ -128,10 +131,10 @@ export function buildServer() {
     };
   });
 
-  app.get("/api/incidents", async () => runtime.snapshot().incidents);
+  app.get("/api/incidents", async () => (await runtime.snapshot()).incidents);
 
   app.get("/api/effects", async () => ({
-    executions: runtime.snapshot().executions,
+    executions: (await runtime.snapshot()).executions,
     journal: adapters.journal,
   }));
 
@@ -140,6 +143,16 @@ export function buildServer() {
     const at = body.at ?? new Date().toISOString();
     const fresh = await runtime.acknowledge(at);
     return { acknowledged: true, at, newEffects: fresh.length };
+  });
+
+  app.get("/api/morning-note", async () => {
+    const snap = await runtime.snapshot();
+    const lastNight = snap.nights[snap.nights.length - 1];
+    if (!lastNight) {
+      return { available: false, message: "No nights recorded yet." };
+    }
+    const note = await phraseMorningNote(lastNight, snap.undisturbedStreak);
+    return { available: true, simulated: true, ...note };
   });
 
   app.get("/healthz", async () => ({ ok: true }));

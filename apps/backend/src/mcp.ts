@@ -155,7 +155,7 @@ export function registerMcp(
     name: string,
     args: Record<string, unknown>,
   ): Promise<Record<string, unknown>> => {
-    const snap = runtime.snapshot();
+    const snap = await runtime.snapshot();
     switch (name) {
       case "get_household_status": {
         const warmup = snap.baselineDays < 7;

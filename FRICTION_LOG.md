@@ -22,4 +22,34 @@ Format per entry: task attempted, steps taken, expected vs actual, severity (low
 - Workaround: all Ring calls proxied through our backend from day one.
 - Suggestion: add a "before you architect" box on the first page of the docs: all calls are server to server; plan a backend.
 
+## Entry 3: ESM Lambda bundling still needs the createRequire banner (2026-09-01)
+
+- Task: deploy the ESM Fastify backend to Lambda with CDK NodejsFunction.
+- Steps: set bundling format to ESM, target node20, first synth.
+- Expected: an ESM project bundles and runs without extra configuration.
+- Actual: transitive dependencies that call require() inside ESM output crash at runtime unless a createRequire banner is injected; this is a long-standing, widely-documented workaround that still is not a default.
+- Severity: low (well-known workaround), but it is the kind of paper cut every ESM Lambda project hits once.
+- Workaround: `banner: "import { createRequire } from 'node:module'; const require = createRequire(import.meta.url);"` in the bundling options.
+- Suggestion: NodejsFunction could apply this banner automatically when format is ESM, or at least surface a synth-time hint.
+
+## Entry 4: aws-cdk-lib built-in template validation crashes in WASM on Node 24 Windows (2026-09-01)
+
+- Task: first cdk deploy of the Nightlight stack.
+- Steps: cdk bootstrap succeeded; cdk deploy ran esbuild bundling fine, then synth crashed.
+- Expected: synth completes, or validation reports findings.
+- Actual: the built-in CloudFormation validation plugin's WASM Rego engine (@aws/cloudformation-validate) crashed with RuntimeError: unreachable while constructing WasmRegoEngine, killing the whole synth. Node 24.13, Windows 11.
+- Severity: medium (blocks deploy entirely, and the error points at WASM internals rather than at a switch).
+- Workaround: CDK_VALIDATION=false environment variable, discovered by reading aws-cdk-lib source (defaultValidationEnabled checks it); it is not surfaced in the error output.
+- Suggestion: fail open with a clear warning when the validation engine cannot initialize, and print the CDK_VALIDATION=false escape hatch in the crash message.
+
+## Entry 5: Bedrock model availability signals disagree with reality for gated models (2026-09-14)
+
+- Task: call Claude on Amazon Bedrock for morning-note phrasing (the AWS Builder integration).
+- Steps: invoked anthropic.claude-opus-5 via the Anthropic Bedrock SDK; got 403 "not available for this account, contact AWS Sales"; accepted the marketplace agreement programmatically (list-foundation-model-agreement-offers plus create-foundation-model-agreement); waited for agreementAvailability AVAILABLE; retried; repeated the whole cycle for claude-sonnet-5.
+- Expected: after the agreement reports AVAILABLE, authorizationStatus AUTHORIZED, entitlementAvailability AVAILABLE, and regionAvailability AVAILABLE, the model can be invoked.
+- Actual: every current-generation Claude (Opus 5, Opus 4.8, Opus 4.7, Sonnet 5) still returns 403 contact-sales on both the Messages endpoint and the classic runtime. The account tier is allowlist-gated, but no availability API exposes that: all four signals read as available while invocation is denied. Meanwhile Claude Sonnet 4.5 and Haiku 4.5 invoke fine through inference profiles on the classic runtime, and the same dated model ids return 404 on the Mantle Messages endpoint.
+- Severity: high for anyone budgeting a hackathon around a specific model; the failure mode is discovered only at invoke time, after agreements are accepted.
+- Workaround: probe actual invocation per candidate model (scripts/bedrock-check.mts), then pin the most capable model that answers: us.anthropic.claude-sonnet-4-5-20250929-v1:0 via the classic AnthropicBedrock client.
+- Suggestion: expose account allowlist gating in get-foundation-model-availability (a fifth field, or make authorizationStatus reflect it), and return it from the agreement-offer listing so the agreement is never accepted for a model the account cannot invoke.
+
 <!-- Add new entries above this line as they happen. -->

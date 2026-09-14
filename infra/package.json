@@ -1,0 +1,12 @@
+{
+  "name": "@nightlight/infra",
+  "version": "0.1.0",
+  "private": true,
+  "description": "CDK stack: DynamoDB event log, Lambda backend with function URL, Bedrock invoke permissions, S3 and CloudFront for the web app. Documented in docs/AWS.md.",
+  "license": "MIT",
+  "type": "module",
+  "dependencies": {
+    "aws-cdk-lib": "^2.170.0",
+    "constructs": "^10.4.2"
+  }
+}

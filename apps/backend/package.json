@@ -11,6 +11,10 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "@anthropic-ai/bedrock-sdk": "^0.33.3",
+    "@aws-sdk/client-dynamodb": "^3.1123.0",
+    "@aws-sdk/lib-dynamodb": "^3.1123.0",
+    "@fastify/aws-lambda": "^6.4.1",
     "@fastify/cors": "^10.0.0",
     "@nightlight/engine": "0.1.0",
     "@nightlight/simulator": "0.1.0",
