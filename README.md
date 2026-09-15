@@ -2,7 +2,7 @@
 
 The Ring doorbell a family already owns, working the night shift for a household living with dementia.
 
-About 60 percent of people living with dementia wander, most dangerously at night. Every door alarm on the market responds the same way: it wakes the caregiver. Nightlight inverts that. It learns the household's normal pattern, and when the front door opens at 3am it responds first with the thing most likely to work and least likely to harm: a recorded message from a family member, played at the door. The caregiver is woken only if the gentle path fails. The metric on the dashboard is the product: nights the caregiver was not woken.
+Across 2,936 nights of 34 real homes from the public CASAS corpus, a standard door alarm wakes the caregiver 14,068 times; Nightlight wakes them 774, a 94.5 percent reduction, with 365 doorway moments settled by a recorded family voice alone (docs/EVAL.md). About 60 percent of people living with dementia wander, most dangerously at night, and every door alarm on the market responds the same way: it wakes the caregiver. Nightlight inverts that. It learns the household's normal pattern, and when the front door opens at 3am it responds first with the thing most likely to work and least likely to harm: a recorded message from a family member, played at the door. The caregiver is woken only if the gentle path fails. The metric on the dashboard is the product: nights the caregiver was not woken.
 
 Built for the Build, Ship, Shape: Amazon Developer Hackathon (Ring track, plus the AWS Builder and Open Source mini challenges).
 

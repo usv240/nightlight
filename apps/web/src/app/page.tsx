@@ -143,10 +143,24 @@ export default function Home() {
             <span className="text-[var(--accent)]">handled.</span>
           </h1>
           <p className="mt-6 max-w-[640px] text-lg leading-relaxed text-muted">
-            Nightlight uses the Ring doorbell a family already owns to watch the
-            door at night, gently guide a loved one with dementia back inside
-            using a familiar voice, and wake the caregiver only when it truly
-            matters.
+            Nightlight learns your household&apos;s nights from the Ring
+            doorbell it already has, answers a 3am doorway with a recorded
+            family voice, and wakes the caregiver only when the voice is not
+            enough.
+          </p>
+          <p className="mt-4 max-w-[640px] rounded-[var(--radius-md)] border border-[var(--accent)] bg-accent-soft p-4 text-sm leading-relaxed text-ink">
+            <span className="font-semibold">Measured, not promised:</span>{" "}
+            across 2,936 nights of 34 real homes from the public CASAS corpus,
+            a standard door alarm wakes the caregiver 14,068 times. Nightlight:
+            774. A 94.5 percent reduction, on data we did not author.{" "}
+            <a
+              href="https://github.com/usv240/nightlight/blob/main/docs/EVAL.md"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="font-medium text-[var(--primary)] underline underline-offset-2"
+            >
+              Method and full results
+            </a>
           </p>
           <div className="mt-8 flex flex-wrap gap-3">
             <a
@@ -166,6 +180,93 @@ export default function Home() {
             Ring Partner API · AWS · Open source (MIT)
           </p>
         </div>
+      </section>
+
+      {/* What / Why / How, for a first-time reader */}
+      <section className="mx-auto max-w-[1120px] px-4 pb-4 sm:px-6">
+        <div className="grid gap-4 md:grid-cols-3">
+          <div className="rounded-[var(--radius-lg)] border border-line bg-surface p-6">
+            <p className="text-xs font-semibold uppercase tracking-wider text-[var(--accent)]">
+              What it is
+            </p>
+            <p className="mt-2 text-sm leading-relaxed text-muted">
+              A night watchman made from the Ring doorbell a family already
+              owns, for households caring for someone with dementia. Nothing to
+              install, nothing to wear.
+            </p>
+          </div>
+          <div className="rounded-[var(--radius-lg)] border border-line bg-surface p-6">
+            <p className="text-xs font-semibold uppercase tracking-wider text-[var(--accent)]">
+              Why it exists
+            </p>
+            <p className="mt-2 text-sm leading-relaxed text-muted">
+              60 percent of people with dementia wander, and every door alarm
+              answers by waking the exhausted caregiver. Caregiver exhaustion,
+              not the disease, is what usually ends care at home.
+            </p>
+          </div>
+          <div className="rounded-[var(--radius-lg)] border border-line bg-surface p-6">
+            <p className="text-xs font-semibold uppercase tracking-wider text-[var(--accent)]">
+              How it works
+            </p>
+            <p className="mt-2 text-sm leading-relaxed text-muted">
+              It learns your household&apos;s normal nights, answers a 3am
+              doorway with a recorded family voice, and wakes you only if the
+              voice is not enough. Escalation contacts are the last resort.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      {/* Proof: the measured claim */}
+      <section id="proof" className="mx-auto max-w-[1120px] px-4 py-16 sm:px-6">
+        <h2 className="text-3xl font-semibold tracking-tight sm:text-4xl">
+          Tested on 2,936 nights of real homes. Not ours.
+        </h2>
+        <p className="mt-4 max-w-[720px] leading-relaxed text-muted">
+          We replayed 34 real single-resident smart homes from the public CASAS
+          corpus (Washington State University, CC-BY-4.0) through the exact
+          engine this site runs, seeding each home&apos;s baseline on its first
+          28 days and judging every night after, once. The comparison column is
+          the product families can buy today: a door alarm that fires on every
+          night-time doorway event.
+        </p>
+        <div className="mt-8 grid gap-4 sm:grid-cols-3">
+          <div className="rounded-[var(--radius-lg)] border border-[var(--danger)] bg-danger-soft p-6">
+            <p className="text-4xl font-semibold text-[var(--danger)]">14,068</p>
+            <p className="mt-2 text-sm leading-relaxed text-muted">
+              caregiver wakes from a threshold door alarm, disturbing 1,068 of
+              the 2,936 nights
+            </p>
+          </div>
+          <div className="rounded-[var(--radius-lg)] border border-[var(--success)] bg-success-soft p-6">
+            <p className="text-4xl font-semibold text-[var(--success)]">774</p>
+            <p className="mt-2 text-sm leading-relaxed text-muted">
+              wakes from Nightlight on the same events: a 94.5 percent
+              reduction, with 72 tracking resident-labeled real exits
+            </p>
+          </div>
+          <div className="rounded-[var(--radius-lg)] border border-[var(--accent)] bg-accent-soft p-6">
+            <p className="text-4xl font-semibold text-[var(--accent)]">365</p>
+            <p className="mt-2 text-sm leading-relaxed text-muted">
+              doorway moments settled by the familiar-voice stage alone, with
+              nobody woken at all
+            </p>
+          </div>
+        </div>
+        <p className="mt-6 text-sm text-muted">
+          Every number, the per-home spread, the leakage-safe method, and the
+          measured limits are in{" "}
+          <a
+            href="https://github.com/usv240/nightlight/blob/main/docs/EVAL.md"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="font-medium text-[var(--primary)] underline underline-offset-2"
+          >
+            docs/EVAL.md
+          </a>
+          , reproducible with one command against the public dataset.
+        </p>
       </section>
 
       {/* Problem */}

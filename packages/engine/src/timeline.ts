@@ -8,6 +8,7 @@ import type {
 import {
   WARMUP_DAYS,
   emptyBaseline,
+  seedBaseline,
   updateBaselineWithDay,
 } from "./baseline";
 import { scoreEvent } from "./scoring";
@@ -52,17 +53,32 @@ type StreamItem =
 export function processTimeline(
   events: RingEvent[],
   cfg: HouseholdConfig,
-  opts: { warmupDays?: number; acks?: CaregiverAck[] } = {},
+  opts: { warmupDays?: number; acks?: CaregiverAck[]; seedDays?: number } = {},
 ): TimelineResult {
   const warmupDays = opts.warmupDays ?? WARMUP_DAYS;
   resetIncidentCounter();
 
+  // Optional history backfill: the first seedDays of distinct local dates
+  // seed the baseline the way production onboarding seeds from Ring event
+  // history, and incident logic begins only on the days after them. This
+  // is also what makes external-dataset evaluation leakage-safe: the
+  // baseline never sees the nights it is judged on before they happen.
+  let seedEvents: RingEvent[] = [];
+  let liveEvents = events;
+  if (opts.seedDays && opts.seedDays > 0) {
+    const dates = [...new Set(events.map((e) => localTime(e.ts, cfg.timezone).date))].sort();
+    const seedSet = new Set(dates.slice(0, opts.seedDays));
+    seedEvents = events.filter((e) => seedSet.has(localTime(e.ts, cfg.timezone).date));
+    liveEvents = events.filter((e) => !seedSet.has(localTime(e.ts, cfg.timezone).date));
+  }
+
   const stream: StreamItem[] = [
-    ...events.map((event): StreamItem => ({ kind: "event", at: event.ts, event })),
+    ...liveEvents.map((event): StreamItem => ({ kind: "event", at: event.ts, event })),
     ...(opts.acks ?? []).map((a): StreamItem => ({ kind: "ack", at: a.at })),
   ].sort((a, b) => (a.at < b.at ? -1 : 1));
 
-  let baseline = emptyBaseline();
+  let baseline =
+    seedEvents.length > 0 ? seedBaseline(seedEvents, cfg.timezone) : emptyBaseline();
   const incidents: Incident[] = [];
   const effects: Effect[] = [];
   const st = { active: null as Incident | null };

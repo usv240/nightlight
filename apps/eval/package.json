@@ -1,0 +1,15 @@
+{
+  "name": "@nightlight/eval",
+  "version": "0.1.0",
+  "private": true,
+  "description": "External evaluation: replays real CASAS smart-home households (Zenodo record 15708568, CC-BY-4.0) through the Nightlight engine and measures caregiver wakes against a threshold door alarm.",
+  "license": "MIT",
+  "type": "module",
+  "scripts": {
+    "casas": "tsx src/run-casas.ts",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@nightlight/engine": "0.1.0"
+  }
+}

@@ -5,6 +5,7 @@ import { useState } from "react";
 import { ThemeToggle } from "./ThemeToggle";
 
 const LINKS = [
+  { href: "#proof", label: "Proof" },
   { href: "#problem", label: "The problem" },
   { href: "#how", label: "How it works" },
   { href: "#demo", label: "Live demo" },
