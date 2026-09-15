@@ -150,6 +150,7 @@ export default function Home() {
     <div className="min-h-screen bg-bg text-ink">
       <Nav />
 
+      <main id="main">
       {/* Hero */}
       <section className="mx-auto max-w-[1120px] px-4 pb-20 pt-16 sm:px-6 sm:pt-24">
         <div className="max-w-[720px]">
@@ -500,6 +501,8 @@ curl http://127.0.0.1:8787/api/summary`}
       </section>
 
       {/* Footer */}
+      </main>
+
       <footer className="border-t border-line">
         <div className="mx-auto max-w-[1120px] px-4 py-12 sm:px-6">
           <div className="flex flex-wrap items-center justify-between gap-4">
