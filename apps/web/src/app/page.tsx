@@ -55,16 +55,34 @@ const STEPS = [
 
 const CITATIONS = [
   {
-    title: "Preventing elopement in dementia",
-    source: "Alzheimer's Association guidance",
-    finding: "An estimated 60 percent of people living with dementia are prone to wandering.",
-    url: "https://www.forumpharmacy.com/education-resources/clinical/preventing-elopement/",
+    title: "Wandering",
+    source: "Alzheimer's Association",
+    finding: "Six in ten people living with dementia will wander at least once, and many do so repeatedly.",
+    url: "https://www.alz.org/help-support/caregiving/stages-behaviors/wandering",
   },
   {
     title: "Sleep and caregiver burden: a scoping review",
-    source: "Innovation in Aging, Oxford Academic",
-    finding: "Up to 67 percent of dementia caregivers experience sleep disturbance; disturbed nights are linked to earlier nursing home admission.",
+    source: "Mattos et al., Innovation in Aging, 2024",
+    finding: "Up to 67 percent of dementia caregivers experience sleep disturbances, against up to 50 percent of the general population.",
     url: "https://academic.oup.com/innovateage/article/8/2/igae005/7607770",
+  },
+  {
+    title: "Sleep problems and institutionalization of the elderly",
+    source: "Pollak and Perlick, J Geriatr Psychiatry Neurol, 1991",
+    finding: "Seventy percent of caregivers cited nocturnal problems in their decision to place a relative in care, often because their own sleep was disrupted.",
+    url: "https://doi.org/10.1177/089198879100400405",
+  },
+  {
+    title: "A nighttime monitoring system reduced dangerous events",
+    source: "Rowe et al., Alzheimer's & Dementia, 2009",
+    finding: "Detecting bed exits and waking the caregiver significantly reduced injuries and unattended home exits across 53 subjects over 12 months.",
+    url: "https://pubmed.ncbi.nlm.nih.gov/19751921/",
+  },
+  {
+    title: "The same system did not improve caregivers' sleep",
+    source: "Rowe et al., Journal of Nursing Scholarship, 2010",
+    finding: "In 49 caregivers followed for a year with actigraphy, sleep time, waking after sleep onset and sleep quality were unchanged, though caregivers called the system of great help. This is why Nightlight answers the door before it wakes anyone.",
+    url: "https://sigmapubs.onlinelibrary.wiley.com/doi/abs/10.1111/j.1547-5069.2010.01337.x",
   },
   {
     title: "94,000 night checks replaced",
@@ -200,9 +218,11 @@ export default function Home() {
               Why it exists
             </p>
             <p className="mt-2 text-sm leading-relaxed text-muted">
-              60 percent of people with dementia wander, and every door alarm
-              answers by waking the exhausted caregiver. Caregiver exhaustion,
-              not the disease, is what usually ends care at home.
+              Six in ten people with dementia wander, and every door alarm
+              answers the same way: it wakes the exhausted caregiver. That
+              answer has been tested in a controlled trial, and it left
+              caregivers&apos; measured sleep unchanged. Seventy percent of
+              families who move a relative into care cite the nights.
             </p>
           </div>
           <div className="rounded-[var(--radius-lg)] border border-line bg-surface p-6">
