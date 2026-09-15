@@ -8,6 +8,7 @@ import { HouseholdRuntime } from "./household";
 import { registerMcp } from "./mcp";
 import { MemoryStore, type NightlightStore } from "./store";
 import { phraseMorningNote } from "./summaries";
+import { RingClient, validateLinkNonce, type RingTokens } from "./ring";
 
 /**
  * Nightlight backend service.
@@ -157,9 +158,84 @@ export function buildServer(opts: { store?: NightlightStore } = {}) {
 
   app.get("/healthz", async () => ({ ok: true }));
 
+  // ---- Live Ring Partner API surface -----------------------------------
+  // The track's required technology, called for real. Tokens persist in
+  // the store; RING_ACCESS_TOKEN (console playground) overrides for spikes.
+  const ringConfigured = Boolean(
+    process.env.RING_CLIENT_ID && process.env.RING_CLIENT_SECRET,
+  );
+  const ring = ringConfigured
+    ? new RingClient({
+        clientId: process.env.RING_CLIENT_ID!,
+        clientSecret: process.env.RING_CLIENT_SECRET!,
+        loadTokens: async () => {
+          const raw = await store.getMeta("demo-house", "ring-tokens");
+          return raw ? (JSON.parse(raw) as RingTokens) : null;
+        },
+        saveTokens: async (t) => {
+          await store.putMeta("demo-house", "ring-tokens", JSON.stringify(t));
+        },
+      })
+    : null;
+
+  // Token Exchange URL (registered in the Ring console): Ring delivers an
+  // authorization code here; we exchange it at oauth.ring.com and persist.
+  const handleTokenExchange = async (code: string | undefined, reply: import("fastify").FastifyReply) => {
+    if (!ring) return reply.code(503).send({ error: "Ring credentials not configured" });
+    if (!code) return reply.code(400).send({ error: "missing code" });
+    await ring.exchangeCode(code);
+    return reply
+      .type("text/html")
+      .send("<html><body style='font-family:system-ui;padding:2rem'><h2>Nightlight is connected to Ring.</h2><p>You can close this window.</p></body></html>");
+  };
+  app.get("/oauth/ring/token", async (req, reply) =>
+    handleTokenExchange((req.query as { code?: string }).code, reply),
+  );
+  app.post("/oauth/ring/token", async (req, reply) => {
+    const q = req.query as { code?: string };
+    const b = (req.body as { json?: { code?: string } })?.json ?? {};
+    return handleTokenExchange(q.code ?? b.code, reply);
+  });
+
+  // Account Link URL: Ring redirects the user's browser here with a nonce
+  // that cryptographically binds the link to a specific Ring account
+  // (HMAC-SHA256 over "time:accountId" with the app's signature key,
+  // validated within a 600 second window; see validateLinkNonce and the
+  // ring.test.ts vectors). The pending nonce is stored, then claimed via
+  // POST /v1/accounts/me/app-integrations once tokens identify the user.
+  app.get("/oauth/ring/link", async (req, reply) => {
+    const { nonce, time } = req.query as { nonce?: string; time?: string };
+    if (!nonce || !time) return reply.code(400).send({ error: "missing nonce or time" });
+    await store.putMeta("demo-house", "ring-pending-link", JSON.stringify({ nonce, time, receivedAt: Date.now() }));
+    return reply
+      .type("text/html")
+      .send("<html><body style='font-family:system-ui;padding:2rem'><h2>Linking Nightlight to your Ring account...</h2><p>Nightlight received Ring's secure link request. Finish sign-in in the app to complete the connection.</p></body></html>");
+  });
+
+  // Validate a pending link nonce against a known account id (used by the
+  // claim step and exercised by the live spike script).
+  app.post("/api/ring/validate-link", async (req, reply) => {
+    const b = (req.body as { json?: { accountId?: string } })?.json ?? {};
+    const raw = await store.getMeta("demo-house", "ring-pending-link");
+    if (!raw || !b.accountId) return reply.code(400).send({ error: "no pending link or missing accountId" });
+    const pending = JSON.parse(raw) as { nonce: string; time: string };
+    const result = validateLinkNonce(pending.nonce, pending.time, b.accountId, RING_SECRET);
+    return reply.send(result);
+  });
+
+  // Live proof routes: real calls to api.amazonvision.com.
+  app.get("/api/ring/me", async (_req, reply) => {
+    if (!ring) return reply.code(503).send({ error: "Ring credentials not configured" });
+    return reply.send(await ring.getUserMe());
+  });
+  app.get("/api/ring/devices", async (_req, reply) => {
+    if (!ring) return reply.code(503).send({ error: "Ring credentials not configured" });
+    return reply.send(await ring.listDevices());
+  });
+
   registerMcp(app, runtime);
 
-  return { app, runtime, adapters };
+  return { app, runtime, adapters, ring };
 }
 
 const isMain = process.argv[1]?.replace(/\\/g, "/").endsWith("src/server.ts") ?? false;

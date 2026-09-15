@@ -33,6 +33,9 @@ export interface NightlightStore {
   listEvents(householdId: string): Promise<RingEvent[]>;
   appendAck(householdId: string, ack: CaregiverAck): Promise<void>;
   listAcks(householdId: string): Promise<CaregiverAck[]>;
+  /** Small per-household key-value metadata (Ring tokens, link state). */
+  putMeta(householdId: string, key: string, value: string): Promise<void>;
+  getMeta(householdId: string, key: string): Promise<string | null>;
   /** Returns true when this call claimed the effect (first execution). */
   claimEffect(householdId: string, key: string, record: Omit<EffectExecutionRecord, "key">): Promise<boolean>;
   listExecutions(householdId: string): Promise<EffectExecutionRecord[]>;
@@ -41,6 +44,7 @@ export interface NightlightStore {
 
 export class MemoryStore implements NightlightStore {
   private events = new Map<string, RingEvent[]>();
+  private meta = new Map<string, string>();
   private acks = new Map<string, CaregiverAck[]>();
   private executions = new Map<string, Map<string, EffectExecutionRecord>>();
 
@@ -62,6 +66,14 @@ export class MemoryStore implements NightlightStore {
 
   async listAcks(h: string): Promise<CaregiverAck[]> {
     return [...(this.acks.get(h) ?? [])];
+  }
+
+  async putMeta(h: string, key: string, value: string): Promise<void> {
+    this.meta.set(`${h}:${key}`, value);
+  }
+
+  async getMeta(h: string, key: string): Promise<string | null> {
+    return this.meta.get(`${h}:${key}`) ?? null;
   }
 
   async claimEffect(
@@ -172,6 +184,21 @@ export class DynamoStore implements NightlightStore {
   async listAcks(h: string): Promise<CaregiverAck[]> {
     const items = await this.queryPrefix(h, "ACK#");
     return items.map((i) => ({ at: i.at as string }));
+  }
+
+  async putMeta(h: string, key: string, value: string): Promise<void> {
+    await this.doc.send(
+      new PutCommand({
+        TableName: this.tableName,
+        Item: { pk: this.pk(h), sk: `META#${key}`, value },
+      }),
+    );
+  }
+
+  async getMeta(h: string, key: string): Promise<string | null> {
+    const items = await this.queryPrefix(h, `META#${key}`);
+    const v = items[0]?.value;
+    return typeof v === "string" ? v : null;
   }
 
   async claimEffect(

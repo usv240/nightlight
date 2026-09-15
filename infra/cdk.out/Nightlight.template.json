@@ -137,7 +137,7 @@
      "S3Bucket": {
       "Fn::Sub": "cdk-hnb659fds-assets-${AWS::AccountId}-us-east-1"
      },
-     "S3Key": "27703c8764391589599a7eaa9759f8d8eb4e42c25d056bdb679c9db74a058128.zip"
+     "S3Key": "6358baf39a2484c1c9c7231bb39f78ea9cc5fa455333d82d19b98dce51ea171a.zip"
     },
     "Environment": {
      "Variables": {
@@ -165,7 +165,7 @@
    ],
    "Metadata": {
     "aws:cdk:path": "Nightlight/Backend/Resource",
-    "aws:asset:path": "asset.27703c8764391589599a7eaa9759f8d8eb4e42c25d056bdb679c9db74a058128",
+    "aws:asset:path": "asset.6358baf39a2484c1c9c7231bb39f78ea9cc5fa455333d82d19b98dce51ea171a",
     "aws:asset:is-bundled": true,
     "aws:asset:property": "Code"
    }
