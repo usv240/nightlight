@@ -17,6 +17,13 @@ This file is the documented-integrations record for the AWS Builder mini challen
 - Endpoint: `GET /api/morning-note` returns `{ text, source: "bedrock" | "template", factsText }`, so the provenance of every sentence is visible.
 - Enabled only when `NIGHTLIGHT_BEDROCK=1` (set in the Lambda environment; never in unit tests, which inject a fake client).
 
+### Strands Agents SDK
+
+- Where: `apps/agent/week_review.py`
+- What for: the Week Review agent. The dashboard answers what happened last night; this answers the question that actually decides whether a family keeps caring at home, which is whether it is getting harder. That needs dependent steps (status, then the week, then the incidents behind any disturbed night, then a judgement about whether to say anything), which is an agent's job rather than a report template's.
+- The design choice that matters: the agent has no database access. It is a second, independent client of the **same MCP server** Alexa+ would use (`apps/backend/src/mcp.ts`, spec 2025-11-25 over Streamable HTTP). The Alexa+ track surface and this AWS Builder integration are therefore the same surface, proven by an outside consumer. It immediately earned its keep by finding a real bug our own conformance tests missed: a 500 on session termination, because a real client sends DELETE with a JSON content-type and an empty body.
+- Model: Claude on Amazon Bedrock. The safety boundary does not move because the output is a paragraph: the agent may report only numbers the tools returned, never estimates, predicts, or gives care advice.
+
 ### Amazon DynamoDB
 
 - Where: `apps/backend/src/store.ts` (`DynamoStore`)

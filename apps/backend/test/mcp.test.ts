@@ -204,3 +204,37 @@ describe("MCP server (Streamable HTTP, 2025-11-25)", () => {
     expect(after.statusCode).toBe(404);
   });
 });
+
+/**
+ * Regression: a real MCP client (the Strands agent in apps/agent) sends
+ * DELETE with a JSON content-type and an empty body when terminating a
+ * session. That produced a 500 until the content-type parser accepted an
+ * empty payload. The original conformance test missed it because inject()
+ * sends no content-type unless asked.
+ */
+describe("MCP session termination from a real client", () => {
+  it("accepts DELETE carrying a JSON content-type and an empty body", async () => {
+    const { app } = buildServer();
+    const init = await app.inject({
+      method: "POST",
+      url: "/mcp",
+      headers: { "content-type": "application/json" },
+      payload: JSON.stringify({
+        jsonrpc: "2.0",
+        id: 1,
+        method: "initialize",
+        params: { protocolVersion: MCP_PROTOCOL_VERSION, capabilities: {}, clientInfo: { name: "c", version: "1" } },
+      }),
+    });
+    const sessionId = init.headers["mcp-session-id"] as string;
+
+    const del = await app.inject({
+      method: "DELETE",
+      url: "/mcp",
+      headers: { "content-type": "application/json", "mcp-session-id": sessionId },
+      payload: "",
+    });
+    expect(del.statusCode).toBe(204);
+    await app.close();
+  });
+});

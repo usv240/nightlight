@@ -1,0 +1,4 @@
+# The Week Review agent. See apps/agent/README.md.
+strands-agents>=1.18
+strands-agents-tools>=0.1
+mcp>=1.0

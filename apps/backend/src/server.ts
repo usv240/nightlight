@@ -37,12 +37,21 @@ export function buildServer(opts: { store?: NightlightStore } = {}) {
   const deduper = new Deduper();
 
   // Capture the raw body for signature verification before JSON parsing.
+  // An empty body with a JSON content-type is legal and common: MCP clients
+  // send exactly that on DELETE when terminating a session, which used to
+  // surface as a 500 (found by the Strands agent in apps/agent, not by the
+  // conformance tests, because inject() sends no content-type by default).
   app.addContentTypeParser(
     "application/json",
     { parseAs: "buffer" },
     (_req, body, done) => {
+      const raw = body as Buffer;
+      if (raw.length === 0) {
+        done(null, { raw, json: undefined });
+        return;
+      }
       try {
-        done(null, { raw: body as Buffer, json: JSON.parse((body as Buffer).toString("utf8")) });
+        done(null, { raw, json: JSON.parse(raw.toString("utf8")) });
       } catch (err) {
         done(err as Error);
       }
