@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   processTimeline,
   summarizeNights,
@@ -17,76 +17,79 @@ import { InfoButton } from "../../components/InfoButton";
  * The caregiver app.
  *
  * Designed for a stressed adult, possibly at 3am: large type, one clear
- * status, one action per card. Connects to the local backend when it is
- * running; otherwise it renders the simulated household through the same
- * engine, clearly labeled.
+ * status, one action per card. Connects to the deployed backend when it
+ * is reachable; otherwise it renders the simulated household through the
+ * same engine, clearly labeled.
  */
 
 const BACKEND = (process.env.NEXT_PUBLIC_BACKEND_URL ?? "http://127.0.0.1:8787").replace(/\/$/, "");
 
-interface SummaryData {
+interface MorningNote {
+  text: string;
+  source: "bedrock" | "template";
+  factsText: string;
+}
+
+interface AppData {
   nights: NightSummary[];
   incidents: Incident[];
   streak: number;
   live: boolean;
+  nightWindow: { start: string; end: string };
+  note: MorningNote | null;
 }
 
-function useSummary(): SummaryData | null {
-  const [data, setData] = useState<SummaryData | null>(null);
+function localFallback(): AppData {
+  const demo = generateDemoMonth(42);
+  const result = processTimeline(demo.events, demo.config);
+  const nights = summarizeNights(
+    demo.events[0]!.ts,
+    demo.events[demo.events.length - 1]!.ts,
+    result.incidents,
+    result.effects,
+    demo.config,
+  );
+  return {
+    nights,
+    incidents: result.incidents,
+    streak: undisturbedStreak(nights),
+    live: false,
+    nightWindow: demo.config.nightWindow,
+    note: null,
+  };
+}
 
-  const fallback = useMemo(() => {
-    const demo = generateDemoMonth(42);
-    const result = processTimeline(demo.events, demo.config);
-    const nights = summarizeNights(
-      demo.events[0]!.ts,
-      demo.events[demo.events.length - 1]!.ts,
-      result.incidents,
-      result.effects,
-      demo.config,
-    );
+async function loadLive(): Promise<AppData | null> {
+  try {
+    const summary = (await fetch(`${BACKEND}/api/summary`, {
+      signal: AbortSignal.timeout(4000),
+    }).then((r) => {
+      if (!r.ok) throw new Error("bad status");
+      return r.json();
+    })) as { nights: NightSummary[]; undisturbedStreak: number };
+    if (!summary.nights?.length) return null;
+
+    const [incidents, settings, note] = await Promise.all([
+      fetch(`${BACKEND}/api/incidents`).then((r) => r.json() as Promise<Incident[]>),
+      fetch(`${BACKEND}/api/settings`).then(
+        (r) => r.json() as Promise<{ nightWindow: { start: string; end: string } }>,
+      ),
+      fetch(`${BACKEND}/api/morning-note`)
+        .then((r) => r.json() as Promise<MorningNote & { available: boolean }>)
+        .catch(() => null),
+    ]);
+
     return {
-      nights,
-      incidents: result.incidents,
-      streak: undisturbedStreak(nights),
-      live: false,
+      nights: summary.nights,
+      incidents,
+      streak: summary.undisturbedStreak,
+      live: true,
+      nightWindow: settings.nightWindow,
+      note: note?.available ? note : null,
     };
-  }, []);
-
-  useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      try {
-        const res = await fetch(`${BACKEND}/api/summary`, {
-          signal: AbortSignal.timeout(1500),
-        });
-        if (!res.ok) throw new Error("backend not ok");
-        const body = (await res.json()) as {
-          nights: NightSummary[];
-          undisturbedStreak: number;
-        };
-        const inc = await fetch(`${BACKEND}/api/incidents`).then(
-          (r) => r.json() as Promise<Incident[]>,
-        );
-        if (!cancelled && body.nights.length > 0) {
-          setData({
-            nights: body.nights,
-            incidents: inc,
-            streak: body.undisturbedStreak,
-            live: true,
-          });
-          return;
-        }
-        if (!cancelled) setData(fallback);
-      } catch {
-        if (!cancelled) setData(fallback);
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, [fallback]);
-
-  return data;
+  } catch {
+    return null;
+  }
 }
 
 function VoiceMessageCard() {
@@ -156,16 +159,154 @@ function VoiceMessageCard() {
       )}
       {state === "recorded" && (
         <p className="mt-3 text-xs text-muted">
-          Saved on this device. Cloud sync to the door adapter ships with the
-          AWS deployment.
+          Saved on this device. On a linked Ring household this uploads and
+          plays through the doorbell chime, which is why Nightlight requests
+          the Chime audio controls permission.
         </p>
       )}
     </div>
   );
 }
 
+function NightWindowCard({
+  window,
+  live,
+  onChanged,
+}: {
+  window: { start: string; end: string };
+  live: boolean;
+  onChanged: () => void;
+}) {
+  const [start, setStart] = useState(window.start);
+  const [end, setEnd] = useState(window.end);
+  const [status, setStatus] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    setStart(window.start);
+    setEnd(window.end);
+  }, [window.start, window.end]);
+
+  const save = async () => {
+    setSaving(true);
+    setStatus(null);
+    try {
+      const res = await fetch(`${BACKEND}/api/settings`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ start, end }),
+      });
+      const body = (await res.json()) as {
+        error?: string;
+        recomputed?: { nights: number; undisturbedStreak: number };
+      };
+      if (!res.ok) {
+        setStatus(body.error ?? "Could not save");
+      } else {
+        setStatus(
+          `Saved. ${body.recomputed?.nights ?? 0} nights recomputed under the new hours.`,
+        );
+        onChanged();
+      }
+    } catch {
+      setStatus("The backend is not reachable from this page right now.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const field =
+    "rounded-[var(--radius-sm)] border border-line bg-surface-raised px-3 py-2 text-sm text-ink";
+
+  return (
+    <div className="rounded-[var(--radius-lg)] border border-line bg-surface p-6">
+      <h2 className="font-semibold text-ink">
+        Your night hours
+        <InfoButton id="baseline" />
+      </h2>
+      <p className="mt-2 text-sm leading-relaxed text-muted">
+        Nightlight only acts between these hours. Everything else, including
+        past nights, is recalculated from the same event history the moment
+        you change them.
+      </p>
+      <div className="mt-4 flex flex-wrap items-end gap-3">
+        <label className="text-sm text-muted">
+          <span className="mb-1 block">Night starts</span>
+          <input
+            type="time"
+            value={start}
+            onChange={(e) => setStart(e.target.value)}
+            className={field}
+          />
+        </label>
+        <label className="text-sm text-muted">
+          <span className="mb-1 block">Night ends</span>
+          <input
+            type="time"
+            value={end}
+            onChange={(e) => setEnd(e.target.value)}
+            className={field}
+          />
+        </label>
+        <button
+          type="button"
+          onClick={save}
+          disabled={saving || !live}
+          className="rounded-[var(--radius-md)] border border-line bg-surface-raised px-5 py-2.5 text-sm font-medium text-ink transition-colors hover:border-primary disabled:opacity-40"
+        >
+          {saving ? "Saving..." : "Save hours"}
+        </button>
+      </div>
+      {!live && (
+        <p className="mt-3 text-xs text-muted">
+          Start the backend (npm run dev) to change these; the simulated view
+          uses 22:00 to 06:00.
+        </p>
+      )}
+      {status && <p className="mt-3 text-xs text-muted">{status}</p>}
+    </div>
+  );
+}
+
 export default function CaregiverApp() {
-  const data = useSummary();
+  const fallback = useMemo(localFallback, []);
+  const [data, setData] = useState<AppData | null>(null);
+  const [acking, setAcking] = useState(false);
+  const [ackMessage, setAckMessage] = useState<string | null>(null);
+
+  const refresh = useCallback(async () => {
+    const live = await loadLive();
+    setData(live ?? fallback);
+  }, [fallback]);
+
+  useEffect(() => {
+    void refresh();
+  }, [refresh]);
+
+  const openIncident = data?.incidents.find((i) => i.state === "NOTIFY_CAREGIVER");
+
+  const acknowledge = useCallback(async () => {
+    setAcking(true);
+    setAckMessage(null);
+    try {
+      const res = await fetch(`${BACKEND}/api/incidents/ack`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ at: new Date().toISOString() }),
+      });
+      const body = (await res.json()) as { acknowledged?: boolean };
+      setAckMessage(
+        body.acknowledged
+          ? "Acknowledged. Nothing further will be escalated tonight."
+          : "Could not acknowledge right now.",
+      );
+      await refresh();
+    } catch {
+      setAckMessage("The backend is not reachable from this page right now.");
+    } finally {
+      setAcking(false);
+    }
+  }, [refresh]);
 
   if (!data) {
     return (
@@ -187,14 +328,13 @@ export default function CaregiverApp() {
             N<span className="text-[var(--accent)]">i</span>ghtlight
           </Link>
           <div className="flex items-center gap-3">
-            {!data.live && (
-              <span className="rounded-full bg-accent-soft px-3 py-1 text-xs font-semibold text-[var(--accent)]">
-                Simulated household
-              </span>
-            )}
+            <span className="rounded-full bg-accent-soft px-3 py-1 text-xs font-semibold text-[var(--accent)]">
+              Simulated household
+              <InfoButton id="simulated" />
+            </span>
             {data.live && (
-              <span className="rounded-full bg-success-soft px-3 py-1 text-xs font-semibold text-[var(--success)]">
-                Connected to backend
+              <span className="hidden rounded-full bg-success-soft px-3 py-1 text-xs font-semibold text-[var(--success)] sm:inline">
+                Live backend
               </span>
             )}
             <ThemeToggle />
@@ -203,6 +343,32 @@ export default function CaregiverApp() {
       </header>
 
       <main className="mx-auto max-w-[900px] space-y-6 px-4 py-10 sm:px-6">
+        {/* The 3am state, when there is one */}
+        {openIncident && (
+          <section className="rounded-[var(--radius-lg)] border-2 border-[var(--danger)] bg-danger-soft p-6">
+            <p className="text-sm font-semibold uppercase tracking-wider text-[var(--danger)]">
+              Happening now
+            </p>
+            <p className="mt-2 text-lg leading-relaxed text-ink">
+              The door opened and activity continued after the voice message
+              played. Are you with them?
+            </p>
+            <button
+              type="button"
+              onClick={acknowledge}
+              disabled={acking}
+              className="mt-4 w-full rounded-[var(--radius-md)] bg-[var(--danger)] px-6 py-4 text-lg font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-50 sm:w-auto"
+            >
+              {acking ? "Sending..." : "I have it"}
+            </button>
+            <p className="mt-3 text-xs text-muted">
+              One tap closes the incident and stops the escalation to your
+              backup contacts.
+              <InfoButton id="escalation" />
+            </p>
+          </section>
+        )}
+
         {/* Hero status */}
         <section className="rounded-[var(--radius-lg)] border border-line bg-surface p-8 text-center">
           <p className="text-sm uppercase tracking-wider text-muted">
@@ -212,18 +378,35 @@ export default function CaregiverApp() {
           <p className="mt-2 text-6xl font-semibold text-[var(--primary)]">
             {data.streak}
           </p>
-          <p className="mt-2 text-muted">
-            in a row, and counting
-          </p>
-          {lastNight && (
-            <p className="mx-auto mt-6 max-w-[560px] rounded-[var(--radius-md)] border border-line bg-surface-raised p-4 text-sm leading-relaxed text-muted">
-              <span className="font-medium text-ink">Last night: </span>
-              {lastNight.text}
-            </p>
+          <p className="mt-2 text-muted">in a row, and counting</p>
+          {(data.note || lastNight) && (
+            <div className="mx-auto mt-6 max-w-[560px] rounded-[var(--radius-md)] border border-line bg-surface-raised p-4 text-left">
+              <p className="text-sm leading-relaxed text-muted">
+                <span className="font-medium text-ink">This morning: </span>
+                {data.note?.text ?? lastNight?.text}
+              </p>
+              {data.note && (
+                <p className="mt-2 text-xs text-muted">
+                  {data.note.source === "bedrock"
+                    ? "Worded by Claude on Amazon Bedrock from the facts below. The facts are computed, never generated."
+                    : "Written directly from the computed facts."}
+                  <span className="mt-1 block font-mono text-[11px] opacity-80">
+                    {data.note.factsText}
+                  </span>
+                </p>
+              )}
+            </div>
           )}
+          {ackMessage && <p className="mt-4 text-sm text-muted">{ackMessage}</p>}
         </section>
 
         <VoiceMessageCard />
+
+        <NightWindowCard
+          window={data.nightWindow}
+          live={data.live}
+          onChanged={() => void refresh()}
+        />
 
         {/* Recent nights */}
         <section className="rounded-[var(--radius-lg)] border border-line bg-surface p-6">
@@ -280,8 +463,10 @@ export default function CaregiverApp() {
                     </span>
                   </div>
                   <p className="mt-2 text-sm text-muted">
-                    Opened {new Date(inc.openedAt).toUTCString()} · {inc.eventTimestamps.length} event
-                    {inc.eventTimestamps.length === 1 ? "" : "s"} · score {inc.score.toFixed(2)}
+                    Opened {new Date(inc.openedAt).toUTCString()} ·{" "}
+                    {inc.eventTimestamps.length} event
+                    {inc.eventTimestamps.length === 1 ? "" : "s"} · score{" "}
+                    {inc.score.toFixed(2)}
                   </p>
                 </li>
               ))}

@@ -146,6 +146,37 @@ export function buildServer(opts: { store?: NightlightStore } = {}) {
     return { acknowledged: true, at, newEffects: fresh.length };
   });
 
+  // Night window settings: the caregiver's own hours. Changing them
+  // re-derives every read model from the same event log on the next
+  // request, because nights are computed, never stored.
+  app.get("/api/settings", async () => ({
+    nightWindow: runtime.config.nightWindow,
+    timezone: runtime.config.timezone,
+    watchingMinutes: runtime.config.watchingMinutes,
+    escalateMinutes: runtime.config.escalateMinutes,
+  }));
+
+  app.post("/api/settings", async (req, reply) => {
+    const body = (req.body as { json?: { start?: string; end?: string } })?.json ?? {};
+    const hhmm = /^([01]\d|2[0-3]):([0-5]\d)$/;
+    if (!body.start || !body.end || !hhmm.test(body.start) || !hhmm.test(body.end)) {
+      return reply.code(400).send({ error: "start and end must be HH:MM in 24 hour time" });
+    }
+    if (body.start === body.end) {
+      return reply.code(400).send({ error: "start and end must differ" });
+    }
+    runtime.setNightWindow(body.start, body.end);
+    const snap = await runtime.snapshot();
+    return reply.send({
+      nightWindow: runtime.config.nightWindow,
+      recomputed: {
+        nights: snap.nights.length,
+        undisturbedStreak: snap.undisturbedStreak,
+        incidents: snap.incidents.length,
+      },
+    });
+  });
+
   app.get("/api/morning-note", async () => {
     const snap = await runtime.snapshot();
     const lastNight = snap.nights[snap.nights.length - 1];

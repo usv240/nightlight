@@ -139,6 +139,18 @@ export class HouseholdRuntime {
     };
   }
 
+  /**
+   * Change the household's night hours.
+   *
+   * Safe to do at any time: nights, incidents, and the baseline are all
+   * derived by replaying the event log, so the next read simply computes
+   * them under the new window. Nothing is migrated because nothing about
+   * the window was ever stored.
+   */
+  setNightWindow(start: string, end: string): void {
+    this.config.nightWindow = { start, end };
+  }
+
   async reset(): Promise<void> {
     await this.store.reset(this.householdId);
   }
