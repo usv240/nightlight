@@ -32,8 +32,16 @@ Draft of the hackathon submission's product-feedback answer, maintained as we bu
 - Onboarding: bootstrap-then-deploy worked first try.
 - Build again: yes.
 
-## Sections to complete before submission
+## Strands Agents SDK
 
-- Ring live-device experience (after developer verification clears)
-- Vega or Fire TV toolchain (if the cross-track components are built)
-- Final word on Bedrock output quality across a month of real morning notes
+- Used for: the Week Review agent (`apps/agent/week_review.py`), which reads a household's week and writes the caregiver a short review. It is a second, independent client of our own MCP server rather than a privileged path into the database.
+- Worked well: connecting an agent to an MCP server over Streamable HTTP is about five lines, and `MCPClient` plus `list_tools_sync` gave the agent our five household tools with no adapter code and no schema duplication. Pointing it at a different deployment is a URL change. The design it encourages, where the agent's only capabilities are the tools you already expose, is the right default for anything touching vulnerable-person data.
+- The thing worth reporting: building this found a real bug that our own thirteen MCP conformance tests missed. A real client terminates a session with `DELETE` carrying a JSON content-type and an empty body, which our server answered with a 500. Fastify's `inject()` sends no content-type unless asked, so the test suite never produced that shape. An outside consumer found it in one run. That is the strongest argument we can make for the SDK: it exercised our surface the way the world will, not the way we imagined.
+- Needs work: the failure mode when a tool call errors is a long Python traceback rather than a structured result, which is hard to reason about mid-agent-loop. Documentation for the non-AgentCore path, running an agent as a plain local process against a remote MCP server, is thinner than the hosted story and is what most people will try first.
+- Onboarding: `pip install strands-agents` and a `BedrockModel` was genuinely the whole setup, with no project scaffolding step.
+- Build again: yes. It earned its place by finding a defect rather than by adding a feature.
+
+## Still to record
+
+- Ring live-device experience, once developer verification clears and a playground access token is available.
+- Final word on Bedrock output quality across a month of real morning notes.

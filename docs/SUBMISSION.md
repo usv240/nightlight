@@ -78,7 +78,9 @@ Five entries in FRICTION_LOG.md, each with task, steps, expected versus actual, 
 
 ## Tracks and mini challenges
 
-Ring (primary). AWS Builder and Open Source mini challenges. The MCP server is a genuine Alexa+ surface; entering that track as well depends on whether one project may enter multiple tracks.
+Ring (primary) and Alexa+. AWS Builder and Open Source mini challenges.
+
+The rules cap winnings, not entries: "each project can only win one track prize and one mini challenge prize." Nightlight qualifies for Alexa+ on its own terms, not as a stretch. The Alexa+ track asks for a self-hosted MCP server implementing spec 2025-11-25 over Streamable HTTP, and `apps/backend/src/mcp.ts` is exactly that: session issuance and enforcement, protocol version validation, origin validation, and five household tools, with fourteen transport conformance tests against the spec revision. The proof that the surface is real rather than declared is that a second, independent client consumes it: the Strands agent in `apps/agent` has no database access and reaches the household only through those five tools. The Ring track surface and the Alexa+ track surface are the same surface.
 
 ---
 
