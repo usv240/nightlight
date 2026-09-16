@@ -34,23 +34,59 @@ export interface MorningNote {
   text: string;
   source: "bedrock" | "template";
   factsText: string;
+  /** Which model produced the text, when one did. */
+  model?: string;
+  /** Models tried and why each failed, so a degraded note is explainable. */
+  attempts?: Array<{ model: string; ok: boolean; reason?: string }>;
 }
 
 export interface PhraseDeps {
-  /** Injectable for tests; defaults to a real Bedrock Mantle client. */
-  createText?: (system: string, user: string) => Promise<string>;
+  /** Injectable for tests; defaults to a real Bedrock client. */
+  createText?: (system: string, user: string, model: string) => Promise<string>;
+  /** Override the model ladder, for tests. */
+  models?: string[];
 }
 
-const MODEL_ID =
-  process.env.BEDROCK_MODEL_ID ?? "us.anthropic.claude-sonnet-4-5-20250929-v1:0";
+/**
+ * The model ladder.
+ *
+ * A single model id is a single point of failure, and on Bedrock the failure
+ * modes are real and varied: per-account allowlist gates (FRICTION_LOG entry
+ * 5), regional capacity, and throttling under load. A caregiver opening the
+ * app at 7am should not get the plain template because one model was busy.
+ *
+ * Tried in order, most capable first. Every rung is a Claude model on
+ * Bedrock, so the safety properties of the prompt hold identically at each
+ * one. The final rung is not a model at all: it is the deterministic
+ * template, which is always exactly correct and merely plain. That is the
+ * right floor for this product, because for fact-phrasing "right but dull"
+ * beats "warm but unverified".
+ */
+export const MODEL_LADDER: string[] = (
+  process.env.BEDROCK_MODEL_IDS ??
+  process.env.BEDROCK_MODEL_ID ??
+  [
+    "us.anthropic.claude-sonnet-4-5-20250929-v1:0",
+    "us.anthropic.claude-3-5-sonnet-20241022-v2:0",
+    "us.anthropic.claude-3-5-haiku-20241022-v1:0",
+  ].join(",")
+)
+  .split(",")
+  .map((m) => m.trim())
+  .filter(Boolean);
+
 const REGION = process.env.AWS_REGION ?? "us-east-1";
 
 let cachedClient: AnthropicBedrock | null = null;
 
-async function bedrockCreateText(system: string, user: string): Promise<string> {
+async function bedrockCreateText(
+  system: string,
+  user: string,
+  model: string,
+): Promise<string> {
   cachedClient ??= new AnthropicBedrock({ awsRegion: REGION });
   const response = await cachedClient.messages.create({
-    model: MODEL_ID,
+    model,
     max_tokens: 500,
     system,
     messages: [{ role: "user", content: user }],
@@ -93,14 +129,37 @@ export async function phraseMorningNote(
     return fallback;
   }
 
-  try {
-    const create = deps.createText ?? bedrockCreateText;
-    const text = await create(SYSTEM, `Facts:\n${factsText}\n\nWrite the morning note now.`);
-    // Guardrail: a phrased note that lost the night's core outcome is worse
-    // than the template. Cheap sanity checks, then ship or fall back.
-    if (text.length > 400) return fallback;
-    return { nightOf: night.nightOf, text, source: "bedrock", factsText };
-  } catch {
-    return fallback;
+  const create = deps.createText ?? bedrockCreateText;
+  const models = deps.models ?? MODEL_LADDER;
+  const prompt = `Facts:\n${factsText}\n\nWrite the morning note now.`;
+  const attempts: Array<{ model: string; ok: boolean; reason?: string }> = [];
+
+  for (const model of models) {
+    try {
+      const text = await create(SYSTEM, prompt, model);
+      // Guardrail: a phrased note that lost the night's core outcome is worse
+      // than the template. A rambling answer is the cheapest signal of that,
+      // and it is treated as a failure of this rung rather than of the whole
+      // ladder, so the next model still gets its turn.
+      if (text.length > 400) {
+        attempts.push({ model, ok: false, reason: "response too long" });
+        continue;
+      }
+      attempts.push({ model, ok: true });
+      return {
+        nightOf: night.nightOf,
+        text,
+        source: "bedrock",
+        factsText,
+        model,
+        attempts,
+      };
+    } catch (err) {
+      attempts.push({ model, ok: false, reason: (err as Error).message });
+    }
   }
+
+  // Every rung failed. The template is always exactly correct, so this
+  // degrades the warmth of the note and never its accuracy.
+  return { ...fallback, attempts };
 }

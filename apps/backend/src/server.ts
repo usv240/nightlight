@@ -7,7 +7,7 @@ import { DemoAdapters } from "./adapters";
 import { HouseholdRuntime } from "./household";
 import { registerMcp } from "./mcp";
 import { MemoryStore, type NightlightStore } from "./store";
-import { phraseMorningNote } from "./summaries";
+import { MODEL_LADDER, phraseMorningNote } from "./summaries";
 import { RingClient, validateLinkNonce, type RingTokens } from "./ring";
 
 /**
@@ -197,6 +197,44 @@ export function buildServer(opts: { store?: NightlightStore } = {}) {
   });
 
   app.get("/healthz", async () => ({ ok: true }));
+
+  /**
+   * Resilience posture: what this deployment will do when things fail.
+   *
+   * Exposed because a fallback nobody can see is indistinguishable from a
+   * fallback that does not exist. This reports the configured degradation
+   * paths and, for the voice, the safety rule that governs total failure.
+   */
+  app.get("/api/resilience", async () => ({
+    voice: {
+      paths: [
+        "ring-chime-family-recording",
+        "ring-chime-polly-synthesis",
+      ],
+      onTotalFailure: "notify the caregiver immediately",
+      rationale:
+        "The incident state machine advances to WATCHING assuming a voice was tried. A silent failure would mean nothing happened at the door and nobody was told. Degrading to waking someone is always safe; degrading to silence never is.",
+      tested: "apps/backend/test/voice.test.ts",
+    },
+    morningNote: {
+      modelLadder: MODEL_LADDER,
+      onTotalFailure: "deterministic template text",
+      rationale:
+        "The template is the night's own computed text, so the note degrades in warmth and never in accuracy. Every response reports which model produced it and what was tried.",
+      enabled: process.env.NIGHTLIGHT_BEDROCK === "1",
+    },
+    detection: {
+      usesModels: false,
+      rationale:
+        "Baselines, scoring and the incident state machine are deterministic and never call a model. Predictable 3am behaviour is a safety requirement, so there is nothing here to fall back from.",
+    },
+    intake: {
+      signatureVerification: "HMAC SHA-256, timing-safe",
+      duplicateSuppression: "TTL-bounded request-id deduper",
+      exactlyOnceEffects: "DynamoDB conditional put on an EXEC# row",
+    },
+    store: store instanceof MemoryStore ? "in-memory" : "dynamodb",
+  }));
 
   // ---- Live Ring Partner API surface -----------------------------------
   // The track's required technology, called for real. Tokens persist in

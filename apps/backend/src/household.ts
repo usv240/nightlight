@@ -104,12 +104,51 @@ export class HouseholdRuntime {
     return fresh;
   }
 
-  private dispatch(effect: Effect): Promise<string> {
+  /**
+   * Execute one effect, and never let a failure end in silence.
+   *
+   * Effects are claimed exactly-once before dispatch, so an exception here
+   * would burn the claim and the effect would never run again. For most
+   * effects a lost retry is an inconvenience. For PLAY_VOICE it is a safety
+   * failure with a specific shape: the incident state machine advances to
+   * WATCHING on the assumption that a voice was tried, so a silent failure
+   * means nothing happened at the door and nobody was told, while someone is
+   * outside at 3am.
+   *
+   * The rule is therefore: if the voice does not play, wake the caregiver
+   * immediately. Waiting is only safe when the gentle path was actually
+   * attempted. Degrading to "wake someone" is always safe; degrading to
+   * silence never is.
+   */
+  private async dispatch(effect: Effect): Promise<string> {
     switch (effect.kind) {
-      case "PLAY_VOICE":
-        return this.adapters.playVoice(effect.incidentId, effect.at);
+      case "PLAY_VOICE": {
+        try {
+          return await this.adapters.playVoice(effect.incidentId, effect.at);
+        } catch (err) {
+          const reason = (err as Error).message;
+          // Compensate: the quiet path failed, so go straight to the loud one.
+          let escalation = "caregiver notification also failed";
+          try {
+            escalation = await this.adapters.notifyCaregiver(
+              effect.incidentId,
+              effect.at,
+            );
+          } catch {
+            // Swallow: we are already in the failure path, and throwing here
+            // would burn the claim for an effect that cannot be retried.
+          }
+          return `Voice failed (${reason}); woke the caregiver immediately instead. ${escalation}`;
+        }
+      }
       case "FETCH_SNAPSHOT":
-        return this.adapters.fetchSnapshot(effect.incidentId, effect.at);
+        try {
+          return await this.adapters.fetchSnapshot(effect.incidentId, effect.at);
+        } catch (err) {
+          // A missing snapshot degrades the caregiver's context, not their
+          // safety. Record it and carry on rather than losing the incident.
+          return `Snapshot unavailable: ${(err as Error).message}`;
+        }
       case "NOTIFY_CAREGIVER":
         return this.adapters.notifyCaregiver(effect.incidentId, effect.at);
       case "ESCALATE":
