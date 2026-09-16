@@ -93,6 +93,7 @@ The rules cap winnings, not entries: "each project can only win one track prize 
 
 ## Links
 
+- Demo video (under 3 minutes): YouTube link, add when published. Shot list with pre-flight commands: docs/VIDEO_SCRIPT.md
 - Live site and demo: https://d28hskpupjctiz.cloudfront.net
 - Repository (MIT): https://github.com/usv240/nightlight
 - Evaluation: https://github.com/usv240/nightlight/blob/main/docs/EVAL.md
