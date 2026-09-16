@@ -96,4 +96,6 @@ The rules cap winnings, not entries: "each project can only win one track prize 
 - Repository (MIT): https://github.com/usv240/nightlight
 - Evaluation: https://github.com/usv240/nightlight/blob/main/docs/EVAL.md
 - AWS integrations: https://github.com/usv240/nightlight/blob/main/docs/AWS.md
+- Evidence for every impact claim: https://github.com/usv240/nightlight/blob/main/docs/EVIDENCE.md
+- Accessibility audit (100 accessibility, 100 best practices, 100 SEO): https://github.com/usv240/nightlight/blob/main/docs/ACCESSIBILITY.md
 - API: https://qdvxx267lgnsitq242aplz722a0zuien.lambda-url.us-east-1.on.aws
