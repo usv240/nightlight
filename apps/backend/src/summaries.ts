@@ -62,18 +62,36 @@ export interface PhraseDeps {
  * right floor for this product, because for fact-phrasing "right but dull"
  * beats "warm but unverified".
  */
-export const MODEL_LADDER: string[] = (
-  process.env.BEDROCK_MODEL_IDS ??
-  process.env.BEDROCK_MODEL_ID ??
-  [
-    "us.anthropic.claude-sonnet-4-5-20250929-v1:0",
-    "us.anthropic.claude-3-5-sonnet-20241022-v2:0",
-    "us.anthropic.claude-3-5-haiku-20241022-v1:0",
-  ].join(",")
-)
-  .split(",")
-  .map((m) => m.trim())
-  .filter(Boolean);
+const DEFAULT_LADDER = [
+  "us.anthropic.claude-sonnet-4-5-20250929-v1:0",
+  "us.anthropic.claude-3-5-sonnet-20241022-v2:0",
+  "us.anthropic.claude-3-5-haiku-20241022-v1:0",
+];
+
+/**
+ * Build the ladder from configuration without ever silently shortening it.
+ *
+ * BEDROCK_MODEL_IDS is an explicit, complete ladder for operators who want
+ * exact control. BEDROCK_MODEL_ID names a preferred model and is *prepended*
+ * to the defaults rather than replacing them, because the single-value form
+ * already existed in deployed configuration and interpreting it as "use only
+ * this" would quietly delete the redundancy. Configuration should not be
+ * able to remove a safety net by accident; removing it should take saying so.
+ */
+export function buildModelLadder(env = process.env): string[] {
+  const explicit = env.BEDROCK_MODEL_IDS;
+  if (explicit) {
+    const ladder = explicit.split(",").map((m) => m.trim()).filter(Boolean);
+    if (ladder.length > 0) return ladder;
+  }
+  const preferred = env.BEDROCK_MODEL_ID?.trim();
+  if (preferred) {
+    return [preferred, ...DEFAULT_LADDER.filter((m) => m !== preferred)];
+  }
+  return [...DEFAULT_LADDER];
+}
+
+export const MODEL_LADDER: string[] = buildModelLadder();
 
 const REGION = process.env.AWS_REGION ?? "us-east-1";
 

@@ -255,3 +255,30 @@ describe("Bedrock model ladder", () => {
     expect(note.attempts?.every((a) => !a.ok)).toBe(true);
   });
 });
+
+describe("model ladder configuration cannot silently remove redundancy", () => {
+  it("BEDROCK_MODEL_ID sets a preference and keeps the rest of the ladder", async () => {
+    const { buildModelLadder } = await import("../src/summaries");
+    const ladder = buildModelLadder({
+      BEDROCK_MODEL_ID: "us.anthropic.claude-sonnet-4-5-20250929-v1:0",
+    } as NodeJS.ProcessEnv);
+    // The deployed Lambda already carried this single-value form. Treating it
+    // as "use only this" quietly deleted the fallbacks, which is exactly the
+    // kind of silent safety regression configuration should not be able to do.
+    expect(ladder[0]).toBe("us.anthropic.claude-sonnet-4-5-20250929-v1:0");
+    expect(ladder.length).toBeGreaterThan(1);
+    expect(new Set(ladder).size).toBe(ladder.length);
+  });
+
+  it("BEDROCK_MODEL_IDS is an explicit complete ladder", async () => {
+    const { buildModelLadder } = await import("../src/summaries");
+    expect(
+      buildModelLadder({ BEDROCK_MODEL_IDS: "only-this" } as NodeJS.ProcessEnv),
+    ).toEqual(["only-this"]);
+  });
+
+  it("defaults to the full ladder when nothing is configured", async () => {
+    const { buildModelLadder } = await import("../src/summaries");
+    expect(buildModelLadder({} as NodeJS.ProcessEnv).length).toBe(3);
+  });
+});
