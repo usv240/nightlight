@@ -41,6 +41,14 @@ Draft of the hackathon submission's product-feedback answer, maintained as we bu
 - Onboarding: `pip install strands-agents` and a `BedrockModel` was genuinely the whole setup, with no project scaffolding step.
 - Build again: yes. It earned its place by finding a defect rather than by adding a feature.
 
+## Amazon Polly
+
+- Used for: the second rung of the voice chain, a synthesised prompt at the door for households that have not recorded a family message yet, or whose recording is unavailable.
+- Worked well: one synthesis call, one S3 put, done. The neural voices read a short calm sentence well, and a fixed sentence means the cost is one synthesis per household ever.
+- Needs work: the same limit EveryWord hit. The generative engine, the best sounding one, refuses word speech marks, which we do not need here but which shapes which engine we can standardise on across both projects. A clear engine capability matrix on the voice list page would save a round trip.
+- Onboarding: immediate.
+- Build again: yes. It turned a first-night gap into a covered case.
+
 ## Still to record
 
 - Ring live-device experience, once developer verification clears and a playground access token is available.
