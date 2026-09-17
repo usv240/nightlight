@@ -71,6 +71,55 @@ Ring is already installed on the door this has to work at. That is the deploymen
 
 The constraint on care at home is the supply of rested caregivers, and every citation above points at the same conclusion: the night is where that supply is spent. Dementia prevalence rises with an ageing population, six in ten of those people will wander, and 70 percent of the families who give up cite the night when they explain why.
 
+## 7. The economics, and what a night is worth
+
+This section exists because "this would help families" is not an argument until someone puts a number on it. Every figure is sourced, and the boundary between what is measured and what is inferred is marked explicitly.
+
+### What dementia care costs now
+
+**US health and long-term care costs for people living with Alzheimer's and other dementias are projected at $409 billion in 2026**, before counting unpaid care. Families and friends provide **6.8 billion hours of unpaid care, valued at $237 billion**. Lifetime cost of care per person is **$405,262**, and **about 70 percent of it is borne by families** as unpaid caregiving and out-of-pocket spending.
+Alzheimer's Association. 2026 Alzheimer's Disease Facts and Figures. *Alzheimer's & Dementia*. 2026. [DOI](https://alz-journals.onlinelibrary.wiley.com/doi/10.1002/alz.71345)
+
+### What the alternative to home costs, per day
+
+**A semi-private nursing home room has a median cost of $114,975 a year, which is $315 a day. Assisted living is $74,400 a year. A home health aide is $80,080 a year** at 44 hours a week.
+CareScout (Genworth) Cost of Care Survey, 2025. [Source](https://investor.genworth.com/news-events/press-releases/detail/1054/carescout-releases-2025-cost-of-care-survey-results)
+
+**$315 a day is the unit that matters for this product**, because the decision Nightlight is trying to postpone is the move into that room.
+
+### What delaying that decision is worth, and what actually achieves it
+
+**A caregiver-support intervention delayed nursing home placement by a median of 329 days** in a randomized controlled trial of 206 spouse-caregivers.
+Mittelman MS, Ferris SH, Shulman E, Steinberg G, Levin B. A family intervention to delay nursing home placement of patients with Alzheimer's disease: a randomized controlled trial. *JAMA*. 1996;276(21):1725-1731. [PubMed](https://pubmed.ncbi.nlm.nih.gov/8940320/)
+
+The mechanism is the part worth reading twice. That trial did not treat the patient. **It supported the caregiver**, and the patient stayed home nearly a year longer as a result. A later analysis estimated the intervention saved about $6,600 per household against usual care, with the largest component being reduced family nursing home spending ([Health Affairs, 2014](https://www.healthaffairs.org/doi/10.1377/hlthaff.2013.1257)).
+
+Read that alongside section 3: **70 percent of caregivers cited nocturnal problems in their decision to institutionalize, often because their own sleep was disrupted** (Pollak and Perlick, 1991). The thing that ends care at home is the night, and the thing that extends it is supporting the person who is awake for it.
+
+### What Nightlight measures, and what it does not
+
+**Measured.** Across 2,936 nights of 34 real homes from the public CASAS corpus, a standard door alarm wakes the caregiver 14,068 times and Nightlight wakes them 774: a **94.5 percent reduction**, with 365 doorway moments settled by the recorded voice alone. Method and limits in [EVAL.md](EVAL.md).
+
+**Not measured, and we will not claim it.** Whether that reduction produces a delay in placement comparable to Mittelman's 329 days is unknown. It would take a trial with real households over years, and no amount of corpus evaluation substitutes. What we can say honestly is that Nightlight targets the specific mechanism that trial targeted, and that the mechanism is the one 70 percent of families name when they explain why they stopped.
+
+### What Nightlight costs to run
+
+Measured from AWS Cost Explorer on the live deployment: **under twenty cents per household per month**. One Bedrock call a day for the morning note, a few hundred DynamoDB operations, Lambda invocations inside the free tier. There is no new hardware, because the doorbell is already on the door.
+
+The comparison is not close, and that is the point:
+
+| | Cost |
+|---|---|
+| One day in a semi-private nursing home | **$315** |
+| Running Nightlight for one household, one month | **under $0.20** |
+| One day of that room buys Nightlight for | **more than a century** |
+
+A single night's delay pays for the software many times over. That is not a claim that Nightlight delays anything; it is the observation that at this price the intervention does not have to work often to be worth running.
+
+### Where the money would actually go
+
+Nightlight is not a billing product. If it worked at scale, the savings land with families first (70 percent of the lifetime $405,262), then with Medicaid, which pays for a large share of long-term care. That is a reason a payer might fund it and a reason it should stay cheap, and it is also why the product's headline metric is nights the caregiver was not woken rather than anything that could be invoiced.
+
 ## Corrections made during this audit
 
 Two claims in our earlier drafts did not survive checking.

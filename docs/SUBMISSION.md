@@ -71,6 +71,16 @@ Ring certification into that empty elderly-care category, multi-door households,
 
 ---
 
+## Potential impact (the economics)
+
+**The economics are the argument, and they are not close.** US dementia care costs $409 billion in 2026 before counting the 6.8 billion hours of unpaid family care worth $237 billion; lifetime cost per person is $405,262, about 70 percent borne by families (Alzheimer's Association, 2026). The alternative to home is $315 a day for a semi-private nursing home room (CareScout, 2025).
+
+The decisive study is one nobody cites in this context. A randomized trial of 206 spouse-caregivers delayed nursing home placement by a **median of 329 days**, and it did so by supporting the caregiver rather than treating the patient (Mittelman et al., *JAMA*, 1996). Read that beside Pollak and Perlick: **70 percent of caregivers cited nocturnal problems in the decision to institutionalize, often because their own sleep was disrupted.** What ends care at home is the night, and what extends it is protecting the person awake for it.
+
+Nightlight costs **under twenty cents per household per month** to run, measured on the live deployment, with no new hardware because the doorbell is already there. One day of that nursing home room pays for more than a century of it.
+
+We do **not** claim Nightlight delays placement; that needs a trial over years. What is measured is a 94.5 percent reduction in night wakings across 2,936 nights of real homes. What is inferred is that it targets the mechanism the 329-day trial targeted. The boundary between the two is marked explicitly in [EVIDENCE.md](EVIDENCE.md) section 7.
+
 ## Product feedback (required field)
 
 See PRODUCT_FEEDBACK.md in the repository for the full version. Summary: the Ring Partner API's shape matched our architecture unusually well (webhook envelopes with request ids and HMAC signatures, motion sub-type classification as a first-class primitive), and we would build on it again. Two things need work: the chime audio playback endpoint does not document accepted formats or arbitrary-audio support, and the server-to-server CORS constraint deserves a first-page callout because it determines a developer's whole architecture. On AWS we used Bedrock (morning note phrasing, with guardrails), DynamoDB (event log plus conditional-put exactly-once effects), Lambda and function URLs (the backend), S3 and CloudFront (the site), and CDK (the stack); details and reasoning are in docs/AWS.md. Bedrock's model-availability APIs misreport allowlist gating, which is our single strongest piece of AWS feedback.
