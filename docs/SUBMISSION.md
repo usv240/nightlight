@@ -99,5 +99,7 @@ The rules cap winnings, not entries: "each project can only win one track prize 
 - Evaluation: https://github.com/usv240/nightlight/blob/main/docs/EVAL.md
 - AWS integrations: https://github.com/usv240/nightlight/blob/main/docs/AWS.md
 - Evidence for every impact claim: https://github.com/usv240/nightlight/blob/main/docs/EVIDENCE.md
+- Design reasoning: https://github.com/usv240/nightlight/blob/main/docs/DESIGN.md
+- Feature requests (optional field): https://github.com/usv240/nightlight/blob/main/docs/FEATURE_REQUESTS.md
 - Accessibility audit (100 accessibility, 100 best practices, 100 SEO): https://github.com/usv240/nightlight/blob/main/docs/ACCESSIBILITY.md
 - API: https://qdvxx267lgnsitq242aplz722a0zuien.lambda-url.us-east-1.on.aws
