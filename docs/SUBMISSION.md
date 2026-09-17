@@ -81,6 +81,20 @@ Nightlight costs **under twenty cents per household per month** to run, measured
 
 We do **not** claim Nightlight delays placement; that needs a trial over years. What is measured is a 94.5 percent reduction in night wakings across 2,936 nights of real homes. What is inferred is that it targets the mechanism the 329-day trial targeted. The boundary between the two is marked explicitly in [EVIDENCE.md](EVIDENCE.md) section 7.
 
+## One more thing: the Household View
+
+Nightlight and Bellwether were built as separate entries in this hackathon. It took until both were deployed to notice they are built for the **same household**: the front door at night, and the speech of the person inside it.
+
+`apps/agent/household_view.py` holds **both MCP servers at once**, twelve tools across two products that share no data and were not designed with each other in mind, and writes one note for the family.
+
+The interesting part is what it refuses to do. Two coincident signals in a dementia context invite exactly the inference nobody should draw from consumer software, so the agent states the overlap as timing and stops:
+
+> Nightlight recorded mostly quiet nights, with doorway events settled by the familiar voice on September 23 and 27. On September 12 a doorway event at 03:05 escalated and you were woken. During the same four weeks Bellwether moved from stable to watch on September 1, then to discuss on September 3. Both systems recorded events in early to mid September. **I cannot tell you whether those changes are related.**
+
+Every date came from a tool call. A product that said those changes *were* related would have no way to know, and that sentence would be the most harmful thing either system could produce.
+
+The correlation needed no privileged access and no change to either server. Two independently built products became composable because both expose a standard surface, which is the case for MCP as a protocol rather than a feature.
+
 ## Product feedback (required field)
 
 See PRODUCT_FEEDBACK.md in the repository for the full version. Summary: the Ring Partner API's shape matched our architecture unusually well (webhook envelopes with request ids and HMAC signatures, motion sub-type classification as a first-class primitive), and we would build on it again. Two things need work: the chime audio playback endpoint does not document accepted formats or arbitrary-audio support, and the server-to-server CORS constraint deserves a first-page callout because it determines a developer's whole architecture. On AWS we used Bedrock (morning note phrasing, with guardrails), DynamoDB (event log plus conditional-put exactly-once effects), Lambda and function URLs (the backend), S3 and CloudFront (the site), and CDK (the stack); details and reasoning are in docs/AWS.md. Bedrock's model-availability APIs misreport allowlist gating, which is our single strongest piece of AWS feedback.
