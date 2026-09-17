@@ -70,6 +70,12 @@ All demo data is simulated and marked as such in every response and UI. Nightlig
 
 MIT. See LICENSE.
 
+## Every number here is a test
+
+The figures on this page are not typed in. [`apps/eval/test/claims.test.ts`](apps/eval/test/claims.test.ts) re-derives each one from `apps/eval/results/casas-hh.json`, the committed output of the CASAS evaluation, and then checks that the same figure appears in this README, the submission, the evidence document, EVAL.md and the Agent Skill. The 94.5 percent is recomputed from the two wake counts rather than read from a stored field. Change a number in prose without re-running the evaluation, or re-run the evaluation and get a different answer, and `npm test` fails.
+
+It has already earned its place. Its first run flagged an 86.6 percent figure quoted in EVAL.md. That figure was correct: it belongs to one home, hh101, not to the aggregate. The test now verifies that home and one other by name, which is a stronger check than the one we set out to write.
+
 ## The Ring API, called for real
 
 `docs/RING_LIVE.md`: three of three read endpoints answered against `api.amazonvision.com` on 17 September 2026, captured with a Playground token and redacted before writing. Reproduce with `RING_ACCESS_TOKEN="<token>" npx tsx apps/backend/scripts/ring-evidence.mts`.
