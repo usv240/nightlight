@@ -49,6 +49,14 @@ Draft of the hackathon submission's product-feedback answer, maintained as we bu
 - Onboarding: immediate.
 - Build again: yes. It turned a first-night gap into a covered case.
 
+## Amazon Bedrock AgentCore
+
+- Used for: hosting the Week Review agent as an invocable endpoint (`apps/agentcore/`), deployed with the AgentCore CLI (`@aws/agentcore` 0.30.0).
+- Worked well: genuinely impressive. `agentcore create` scaffolded a working Strands project with a Streamable HTTP MCP client already wired, which is exactly the shape our agent already had, and `agentcore deploy` produced a runtime with its own IAM role in under two minutes without us writing any infrastructure. CodeZip build meant no Docker. The first `invoke` after deploy returned a correct answer built from live MCP tool calls.
+- Needs work, two things, both first-run experience: the scaffold pins a `global.` Bedrock inference profile, which an allowlist-gated account cannot invoke, and the resulting failure points at the model rather than at the gate (see our Bedrock entry). And a project that is cloned rather than scaffolded fails its first deploy with `Cannot find module '@aws/agentcore-cdk'` because `agentcore/cdk/node_modules` is gitignored, which reads like a broken template rather than a missing `npm install`. The `deploy` step reports "Sync CDK dependencies" as succeeded immediately before the build fails on missing dependencies, which is the confusing part.
+- Onboarding: `npx @aws/agentcore create` with the right flags, then `deploy`, then `invoke`. Three commands from nothing to a hosted agent.
+- Build again: yes. It closed the gap between demonstrating an agent and deploying one.
+
 ## Still to record
 
 - Ring live-device experience, once developer verification clears and a playground access token is available.

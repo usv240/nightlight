@@ -32,6 +32,15 @@ This file is the documented-integrations record for the AWS Builder mini challen
 - The design choice that matters: the agent has no database access. It is a second, independent client of the **same MCP server** Alexa+ would use (`apps/backend/src/mcp.ts`, spec 2025-11-25 over Streamable HTTP). The Alexa+ track surface and this AWS Builder integration are therefore the same surface, proven by an outside consumer. It immediately earned its keep by finding a real bug our own conformance tests missed: a 500 on session termination, because a real client sends DELETE with a JSON content-type and an empty body.
 - Model: Claude on Amazon Bedrock. The safety boundary does not move because the output is a paragraph: the agent may report only numbers the tools returned, never estimates, predicts, or gives care advice.
 
+### Amazon Bedrock AgentCore (Runtime)
+
+- Where: `apps/agentcore/`, runtime `nightlightweek_weekreview` in us-east-1
+- What for: hosting the Week Review agent as an invocable endpoint rather than a local script. The same agent, the same system prompt, deployed with its own IAM role and CloudWatch traces.
+- Why it matters: the local agent proved the MCP surface was real but could not be *called* by anything. On AgentCore it has an ARN, so Alexa+, a scheduled job, or another agent can ask a household how its week went. That was the gap in all three of our projects: the MCP servers were live and the agents were not.
+- The architecture: the hosted agent has no database access and **no local tools at all**. The scaffold ships a placeholder `add_numbers` tool and it is removed on purpose, so the agent's entire capability surface is the five tools the MCP server exposes, reached over the same public endpoint Alexa+ would use.
+- Verified live: `agentcore invoke` returned "Seven quiet nights, September 24 to 30. On the 27th there was one doorway event at 23:50 that settled with the familiar voice, so you were not woken. You're now at eighteen nights undisturbed. This is simulated demo data." Every figure came from a tool call.
+- Friction worth reporting: the scaffold defaults to a `global.` inference profile, which this allowlist-gated account cannot invoke (entry 5), and a cloned project needs `npm install` in `agentcore/cdk/` before the first deploy or the CDK build fails with a missing-module error that reads like a broken template.
+
 ### Amazon DynamoDB
 
 - Where: `apps/backend/src/store.ts` (`DynamoStore`)
