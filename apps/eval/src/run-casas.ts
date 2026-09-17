@@ -44,6 +44,12 @@ interface HomeResult {
   nlWakes: number;
   nlWakeNights: number;
   nlWakesNearExit: number;
+  /** The recall side: the corpus's own labeled night exits, and who caught them. */
+  nightExits: number;
+  nightExitsAlarmCaught: number;
+  nightExitsNoticed: number;
+  nightExitsWoke: number;
+  nightExitsMissedAndReturned: number;
 }
 
 function evalHome(name: string, file: string, seedDays: number): HomeResult | null {
@@ -75,6 +81,63 @@ function evalHome(name: string, file: string, seedDays: number): HomeResult | nu
     parsed.leaveHomeAt.some((l) => Math.abs(minutesBetween(l, ts)) <= 15) ||
     parsed.enterHomeAt.some((l) => Math.abs(minutesBetween(l, ts)) <= 15);
 
+  /**
+   * The recall side, and the reason this evaluation is worth believing.
+   *
+   * Waking a caregiver less often is trivially achievable by doing nothing,
+   * so a reduction figure on its own says very little. The corpus labels
+   * its own ground truth: residents marked Leave_Home when they actually
+   * left. Restricting those labels to the night window on judged nights
+   * gives the set of real night-time exits each system had the chance to
+   * catch, and the question becomes what the restraint cost.
+   *
+   * Three columns, because "caught" is not one thing here.
+   *
+   *   alarmCaught  a threshold alarm wake within the window. This is the
+   *                ceiling: the alarm fires on every night doorway event,
+   *                so anything it misses was never visible to either system.
+   *   noticed      Nightlight opened an incident and responded at all,
+   *                which on the first stage means the recorded voice played.
+   *   woke         Nightlight escalated to the caregiver.
+   *
+   * The gap between noticed and woke is not a failure, it is the design:
+   * the voice is tried first and the caregiver is woken only if it does
+   * not settle. Reporting them as one number would hide the entire
+   * product. Reporting only the reduction would hide the cost.
+   *
+   * missedAndReturned qualifies the misses: an exit the resident came back
+   * from within thirty minutes, by the corpus's own Enter_Home label, is a
+   * different kind of miss from one they did not.
+   */
+  const MATCH_MINUTES = 15;
+  const near = (a: string, b: string) => Math.abs(minutesBetween(a, b)) <= MATCH_MINUTES;
+
+  const nightExits = parsed.leaveHomeAt.filter(
+    (l) =>
+      liveDates.has(l.slice(0, 10)) && inNightWindow(l, cfg.timezone, cfg.nightWindow),
+  );
+  const incidentOpenAt = result.incidents.map((i: Incident) => i.openedAt);
+  const returnedWithin30 = (l: string) =>
+    parsed.enterHomeAt.some((e) => {
+      const gap = minutesBetween(l, e);
+      return gap > 0 && gap <= 30;
+    });
+
+  let alarmCaught = 0;
+  let noticed = 0;
+  let woke = 0;
+  let missedAndReturned = 0;
+  for (const exit of nightExits) {
+    const a = alarmEvents.some((e) => near(e.ts, exit));
+    const n = incidentOpenAt.some((t) => near(t, exit));
+    const w = wakeEffects.some((e) => near(e.at, exit));
+    if (a) alarmCaught++;
+    if (n) noticed++;
+    if (w) woke++;
+    // Only count a miss against Nightlight where the alarm could see it.
+    if (a && !n && returnedWithin30(exit)) missedAndReturned++;
+  }
+
   return {
     home: name,
     nightsJudged: liveDates.size,
@@ -87,6 +150,11 @@ function evalHome(name: string, file: string, seedDays: number): HomeResult | nu
     nlWakes: wakeEffects.length,
     nlWakeNights: wakeNights.size,
     nlWakesNearExit: wakeEffects.filter((e) => nearExit(e.at)).length,
+    nightExits: nightExits.length,
+    nightExitsAlarmCaught: alarmCaught,
+    nightExitsNoticed: noticed,
+    nightExitsWoke: woke,
+    nightExitsMissedAndReturned: missedAndReturned,
   };
 }
 
@@ -112,7 +180,7 @@ for (const [name, file] of files) {
   if (r) {
     rows.push(r);
     console.log(
-      `${name}: nights=${r.nightsJudged} alarmWakes=${r.alarmWakes} nlWakes=${r.nlWakes} voiceOnly=${r.nlVoiceOnly} nearExit=${r.nlWakesNearExit}`,
+      `${name}: nights=${r.nightsJudged} alarmWakes=${r.alarmWakes} nlWakes=${r.nlWakes} voiceOnly=${r.nlVoiceOnly} nightExits=${r.nightExits} noticed=${r.nightExitsNoticed} woke=${r.nightExitsWoke}`,
     );
   } else {
     skipped++;
@@ -137,6 +205,27 @@ const totals = {
     caregiverWakes: sum("nlWakes"),
     nightsDisturbed: sum("nlWakeNights"),
     wakesNearLabeledExit: sum("nlWakesNearExit"),
+  },
+  /**
+   * Recall against the corpus's own ground truth. `alarmCaught` is the
+   * ceiling; percentages below are taken against it rather than against
+   * every label, because a label the threshold alarm could not see was
+   * never available to Nightlight either.
+   */
+  labeledNightExits: {
+    total: sum("nightExits"),
+    visibleToBothSystems: sum("nightExitsAlarmCaught"),
+    nightlightNoticed: sum("nightExitsNoticed"),
+    nightlightWokeCaregiver: sum("nightExitsWoke"),
+    missedByNightlightButResidentReturnedWithin30Min: sum("nightExitsMissedAndReturned"),
+    noticedPercentOfVisible:
+      sum("nightExitsAlarmCaught") > 0
+        ? Math.round((sum("nightExitsNoticed") / sum("nightExitsAlarmCaught")) * 1000) / 10
+        : null,
+    wokePercentOfVisible:
+      sum("nightExitsAlarmCaught") > 0
+        ? Math.round((sum("nightExitsWoke") / sum("nightExitsAlarmCaught")) * 1000) / 10
+        : null,
   },
   wakeReductionPercent:
     sum("alarmWakes") > 0

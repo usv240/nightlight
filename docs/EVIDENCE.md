@@ -55,7 +55,7 @@ Read together, these two papers are the strongest argument for Nightlight's desi
 
 Nightlight's contribution is not a better detector. Detection is the part the literature has already done well. Nightlight changes what happens in the seconds after detection: a recorded family voice plays at the door first, and the caregiver is woken only if that does not settle things. The caregiver alert becomes the escalation path rather than the response.
 
-That is a claim we can measure, and we do. Across 2,936 nights of 34 real homes from the public CASAS corpus, a standard door alarm wakes the caregiver 14,068 times and Nightlight wakes them 774, a 94.5 percent reduction, with 365 doorway moments settled by the recorded voice alone. Method, limits, and the reproduction command are in [EVAL.md](EVAL.md).
+That is a claim we can measure, and we do. Across 2,936 nights of 34 real homes from the public CASAS corpus, a standard door alarm wakes the caregiver 14,068 times and Nightlight wakes them 774, a 94.5 percent reduction, with 365 doorway moments settled by the recorded voice alone. On the same data, the cost of that restraint is measured too: of 34 resident-labeled night-time exits, Nightlight flagged 7, and 26 of the 27 it did not flag were exits the resident returned from within thirty minutes. Method, limits, and the reproduction command are in [EVAL.md](EVAL.md).
 
 ## 5. Why the voice is the right first response
 
@@ -98,7 +98,7 @@ Read that alongside section 3: **70 percent of caregivers cited nocturnal proble
 
 ### What Nightlight measures, and what it does not
 
-**Measured.** Across 2,936 nights of 34 real homes from the public CASAS corpus, a standard door alarm wakes the caregiver 14,068 times and Nightlight wakes them 774: a **94.5 percent reduction**, with 365 doorway moments settled by the recorded voice alone. Method and limits in [EVAL.md](EVAL.md).
+**Measured.** Across 2,936 nights of 34 real homes from the public CASAS corpus, a standard door alarm wakes the caregiver 14,068 times and Nightlight wakes them 774: a **94.5 percent reduction**, with 365 doorway moments settled by the recorded voice alone. On the same data, the cost of that restraint is measured too: of 34 resident-labeled night-time exits, Nightlight flagged 7, and 26 of the 27 it did not flag were exits the resident returned from within thirty minutes. The corpus contains no wandering, so that flag rate is not a wandering-detection rate and is not offered as one. Method and limits in [EVAL.md](EVAL.md).
 
 **Not measured, and we will not claim it.** Whether that reduction produces a delay in placement comparable to Mittelman's 329 days is unknown. It would take a trial with real households over years, and no amount of corpus evaluation substitutes. What we can say honestly is that Nightlight targets the specific mechanism that trial targeted, and that the mechanism is the one 70 percent of families name when they explain why they stopped.
 

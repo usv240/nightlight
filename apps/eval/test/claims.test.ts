@@ -38,8 +38,17 @@ const casas = JSON.parse(
       incidents: number;
     };
     wakeReductionPercent: number;
+    labeledNightExits: {
+      total: number;
+      visibleToBothSystems: number;
+      nightlightNoticed: number;
+      nightlightWokeCaregiver: number;
+      missedByNightlightButResidentReturnedWithin30Min: number;
+      noticedPercentOfVisible: number;
+      wokePercentOfVisible: number;
+    };
   };
-  homes: unknown[];
+  homes: Array<Record<string, number | string>>;
 };
 
 /** Files where a public claim could be made, so drift is caught wherever it happens. */
@@ -133,6 +142,20 @@ describe("every public claim matches the evidence", () => {
     expect(tm004.nlWakes).toBe(0);
   });
 
+  it("the cost of the restraint is stated wherever the reduction is", () => {
+    // A reduction figure alone is worth little: waking someone less often is
+    // trivially achievable by doing nothing. Anywhere this repository claims
+    // the 94.5 percent to a reader, it has to carry what that cost. This is
+    // the assertion that stops the flattering half of the result from
+    // travelling on its own.
+    const claimsReduction = PUBLIC_TEXT.filter((d) => d.text.includes("94.5 percent"));
+    expect(claimsReduction.length).toBeGreaterThan(0);
+    const withoutCost = claimsReduction.filter(
+      (d) => !/34 (?:resident-labeled )?(?:night-time |night )exits|labeled night exits/i.test(d.text),
+    );
+    expect(withoutCost.map((d) => d.file)).toEqual([]);
+  });
+
   it("the aggregate reduction is stated as 94.5 percent and nowhere contradicted", () => {
     // Only the aggregate is constrained. Per-home figures legitimately
     // differ and are verified above by name.
@@ -142,5 +165,81 @@ describe("every public claim matches the evidence", () => {
     );
     expect(contradictions.map((d) => d.file)).toEqual([]);
     expect(statedEverywhere("94.5 percent").length).toBeGreaterThan(0);
+  });
+});
+
+/**
+ * The recall side, which is the number a judge asks for second and the one
+ * a project is tempted not to publish.
+ */
+describe("the negative control: what the restraint cost", () => {
+  const e = casas.totals.labeledNightExits;
+
+  it("counts only exits the threshold alarm could also see", () => {
+    // Percentages are taken against the alarm's own catch, not against every
+    // label in the corpus. A labeled exit that produced no door event was
+    // never available to either system, and counting it would understate
+    // Nightlight against a baseline that never had the chance either.
+    expect(e.visibleToBothSystems).toBeLessThanOrEqual(e.total);
+    expect(e.total).toBe(34);
+    expect(e.visibleToBothSystems).toBe(34);
+  });
+
+  it("re-derives the flag rate rather than trusting the stored field", () => {
+    const derived = (e.nightlightNoticed / e.visibleToBothSystems) * 100;
+    expect(Number(derived.toFixed(1))).toBe(20.6);
+    expect(e.noticedPercentOfVisible).toBe(20.6);
+    expect(e.nightlightNoticed).toBe(7);
+  });
+
+  it("cannot escalate more exits than it flagged", () => {
+    // Waking the caregiver is downstream of opening an incident, so this
+    // ordering is a property of the state machine, not a coincidence.
+    expect(e.nightlightWokeCaregiver).toBeLessThanOrEqual(e.nightlightNoticed);
+    expect(e.nightlightWokeCaregiver).toBe(6);
+  });
+
+  it("accounts for every miss, and names the one that is not a round trip", () => {
+    const missed = e.visibleToBothSystems - e.nightlightNoticed;
+    expect(missed).toBe(27);
+    expect(e.missedByNightlightButResidentReturnedWithin30Min).toBe(26);
+    // Exactly one missed night exit was not followed by the resident coming
+    // back within half an hour. It is stated rather than rounded away.
+    expect(missed - e.missedByNightlightButResidentReturnedWithin30Min).toBe(1);
+  });
+
+  it("the misses concentrate where night activity is already normal", () => {
+    // The reading offered publicly is that a personal baseline suppresses
+    // what a household has made ordinary. That reading is checkable: homes
+    // with quiet nights should flag most of their labeled exits and busy
+    // ones should not. If this ever inverts, the explanation in EVAL.md is
+    // wrong and has to be rewritten rather than reinterpreted.
+    const withExits = casas.homes.filter((h) => Number(h.nightExits) > 0);
+    expect(withExits).toHaveLength(8);
+
+    const rate = (h: Record<string, number | string>) =>
+      Number(h.alarmWakes) / Number(h.nightsJudged);
+    const quiet = withExits.filter((h) => rate(h) < 5);
+    const busy = withExits.filter((h) => rate(h) >= 5);
+
+    const flagged = (g: typeof withExits) => ({
+      exits: g.reduce((n, h) => n + Number(h.nightExits), 0),
+      noticed: g.reduce((n, h) => n + Number(h.nightExitsNoticed), 0),
+    });
+    const q = flagged(quiet);
+    const b = flagged(busy);
+
+    expect(q.noticed / q.exits).toBeGreaterThan(b.noticed / b.exits);
+    expect(q).toEqual({ exits: 7, noticed: 6 });
+    expect(b).toEqual({ exits: 27, noticed: 1 });
+  });
+
+  it("says out loud that this corpus cannot measure wandering detection", () => {
+    // The flag rate is about restraint on healthy adults. Letting it be read
+    // as a wandering-detection rate would be the most misleading thing this
+    // repository could do, so the disclaimer is a test rather than a habit.
+    const evalDoc = PUBLIC_TEXT.find((d) => d.file === "docs/EVAL.md");
+    expect(evalDoc).toBeDefined();
+    expect(evalDoc!.text).toMatch(/not a wandering-detection rate/i);
   });
 });

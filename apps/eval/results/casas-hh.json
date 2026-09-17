@@ -18,6 +18,15 @@
    "nightsDisturbed": 319,
    "wakesNearLabeledExit": 72
   },
+  "labeledNightExits": {
+   "total": 34,
+   "visibleToBothSystems": 34,
+   "nightlightNoticed": 7,
+   "nightlightWokeCaregiver": 6,
+   "missedByNightlightButResidentReturnedWithin30Min": 26,
+   "noticedPercentOfVisible": 20.6,
+   "wokePercentOfVisible": 17.6
+  },
   "wakeReductionPercent": 94.5
  },
  "homes": [
@@ -32,7 +41,12 @@
    "nlVoiceOnly": 8,
    "nlWakes": 22,
    "nlWakeNights": 11,
-   "nlWakesNearExit": 0
+   "nlWakesNearExit": 0,
+   "nightExits": 0,
+   "nightExitsAlarmCaught": 0,
+   "nightExitsNoticed": 0,
+   "nightExitsWoke": 0,
+   "nightExitsMissedAndReturned": 0
   },
   {
    "home": "hh102",
@@ -45,7 +59,12 @@
    "nlVoiceOnly": 4,
    "nlWakes": 2,
    "nlWakeNights": 1,
-   "nlWakesNearExit": 0
+   "nlWakesNearExit": 0,
+   "nightExits": 0,
+   "nightExitsAlarmCaught": 0,
+   "nightExitsNoticed": 0,
+   "nightExitsWoke": 0,
+   "nightExitsMissedAndReturned": 0
   },
   {
    "home": "hh103",
@@ -58,7 +77,12 @@
    "nlVoiceOnly": 3,
    "nlWakes": 0,
    "nlWakeNights": 0,
-   "nlWakesNearExit": 0
+   "nlWakesNearExit": 0,
+   "nightExits": 0,
+   "nightExitsAlarmCaught": 0,
+   "nightExitsNoticed": 0,
+   "nightExitsWoke": 0,
+   "nightExitsMissedAndReturned": 0
   },
   {
    "home": "hh104",
@@ -71,7 +95,12 @@
    "nlVoiceOnly": 13,
    "nlWakes": 4,
    "nlWakeNights": 2,
-   "nlWakesNearExit": 2
+   "nlWakesNearExit": 2,
+   "nightExits": 2,
+   "nightExitsAlarmCaught": 2,
+   "nightExitsNoticed": 0,
+   "nightExitsWoke": 0,
+   "nightExitsMissedAndReturned": 2
   },
   {
    "home": "hh105",
@@ -84,7 +113,12 @@
    "nlVoiceOnly": 0,
    "nlWakes": 4,
    "nlWakeNights": 2,
-   "nlWakesNearExit": 0
+   "nlWakesNearExit": 0,
+   "nightExits": 0,
+   "nightExitsAlarmCaught": 0,
+   "nightExitsNoticed": 0,
+   "nightExitsWoke": 0,
+   "nightExitsMissedAndReturned": 0
   },
   {
    "home": "hh106",
@@ -97,7 +131,12 @@
    "nlVoiceOnly": 4,
    "nlWakes": 0,
    "nlWakeNights": 0,
-   "nlWakesNearExit": 0
+   "nlWakesNearExit": 0,
+   "nightExits": 0,
+   "nightExitsAlarmCaught": 0,
+   "nightExitsNoticed": 0,
+   "nightExitsWoke": 0,
+   "nightExitsMissedAndReturned": 0
   },
   {
    "home": "hh108",
@@ -110,7 +149,12 @@
    "nlVoiceOnly": 0,
    "nlWakes": 26,
    "nlWakeNights": 11,
-   "nlWakesNearExit": 2
+   "nlWakesNearExit": 2,
+   "nightExits": 1,
+   "nightExitsAlarmCaught": 1,
+   "nightExitsNoticed": 0,
+   "nightExitsWoke": 0,
+   "nightExitsMissedAndReturned": 1
   },
   {
    "home": "hh109",
@@ -123,7 +167,12 @@
    "nlVoiceOnly": 2,
    "nlWakes": 6,
    "nlWakeNights": 3,
-   "nlWakesNearExit": 1
+   "nlWakesNearExit": 1,
+   "nightExits": 2,
+   "nightExitsAlarmCaught": 2,
+   "nightExitsNoticed": 0,
+   "nightExitsWoke": 0,
+   "nightExitsMissedAndReturned": 2
   },
   {
    "home": "hh111",
@@ -136,7 +185,12 @@
    "nlVoiceOnly": 8,
    "nlWakes": 20,
    "nlWakeNights": 6,
-   "nlWakesNearExit": 4
+   "nlWakesNearExit": 4,
+   "nightExits": 0,
+   "nightExitsAlarmCaught": 0,
+   "nightExitsNoticed": 0,
+   "nightExitsWoke": 0,
+   "nightExitsMissedAndReturned": 0
   },
   {
    "home": "hh112",
@@ -149,7 +203,12 @@
    "nlVoiceOnly": 6,
    "nlWakes": 8,
    "nlWakeNights": 4,
-   "nlWakesNearExit": 2
+   "nlWakesNearExit": 2,
+   "nightExits": 0,
+   "nightExitsAlarmCaught": 0,
+   "nightExitsNoticed": 0,
+   "nightExitsWoke": 0,
+   "nightExitsMissedAndReturned": 0
   },
   {
    "home": "hh113",
@@ -162,7 +221,12 @@
    "nlVoiceOnly": 36,
    "nlWakes": 42,
    "nlWakeNights": 18,
-   "nlWakesNearExit": 29
+   "nlWakesNearExit": 29,
+   "nightExits": 1,
+   "nightExitsAlarmCaught": 1,
+   "nightExitsNoticed": 1,
+   "nightExitsWoke": 1,
+   "nightExitsMissedAndReturned": 0
   },
   {
    "home": "hh115",
@@ -175,7 +239,12 @@
    "nlVoiceOnly": 38,
    "nlWakes": 122,
    "nlWakeNights": 44,
-   "nlWakesNearExit": 24
+   "nlWakesNearExit": 24,
+   "nightExits": 3,
+   "nightExitsAlarmCaught": 3,
+   "nightExitsNoticed": 3,
+   "nightExitsWoke": 3,
+   "nightExitsMissedAndReturned": 0
   },
   {
    "home": "hh116",
@@ -188,7 +257,12 @@
    "nlVoiceOnly": 3,
    "nlWakes": 10,
    "nlWakeNights": 5,
-   "nlWakesNearExit": 4
+   "nlWakesNearExit": 4,
+   "nightExits": 0,
+   "nightExitsAlarmCaught": 0,
+   "nightExitsNoticed": 0,
+   "nightExitsWoke": 0,
+   "nightExitsMissedAndReturned": 0
   },
   {
    "home": "hh117",
@@ -201,7 +275,12 @@
    "nlVoiceOnly": 15,
    "nlWakes": 112,
    "nlWakeNights": 46,
-   "nlWakesNearExit": 0
+   "nlWakesNearExit": 0,
+   "nightExits": 22,
+   "nightExitsAlarmCaught": 22,
+   "nightExitsNoticed": 1,
+   "nightExitsWoke": 0,
+   "nightExitsMissedAndReturned": 21
   },
   {
    "home": "hh120",
@@ -214,7 +293,12 @@
    "nlVoiceOnly": 11,
    "nlWakes": 8,
    "nlWakeNights": 3,
-   "nlWakesNearExit": 0
+   "nlWakesNearExit": 0,
+   "nightExits": 0,
+   "nightExitsAlarmCaught": 0,
+   "nightExitsNoticed": 0,
+   "nightExitsWoke": 0,
+   "nightExitsMissedAndReturned": 0
   },
   {
    "home": "hh125",
@@ -227,7 +311,12 @@
    "nlVoiceOnly": 3,
    "nlWakes": 32,
    "nlWakeNights": 14,
-   "nlWakesNearExit": 0
+   "nlWakesNearExit": 0,
+   "nightExits": 0,
+   "nightExitsAlarmCaught": 0,
+   "nightExitsNoticed": 0,
+   "nightExitsWoke": 0,
+   "nightExitsMissedAndReturned": 0
   },
   {
    "home": "hh128",
@@ -240,7 +329,12 @@
    "nlVoiceOnly": 3,
    "nlWakes": 14,
    "nlWakeNights": 5,
-   "nlWakesNearExit": 0
+   "nlWakesNearExit": 0,
+   "nightExits": 0,
+   "nightExitsAlarmCaught": 0,
+   "nightExitsNoticed": 0,
+   "nightExitsWoke": 0,
+   "nightExitsMissedAndReturned": 0
   },
   {
    "home": "ihs06",
@@ -253,7 +347,12 @@
    "nlVoiceOnly": 5,
    "nlWakes": 16,
    "nlWakeNights": 8,
-   "nlWakesNearExit": 0
+   "nlWakesNearExit": 0,
+   "nightExits": 0,
+   "nightExitsAlarmCaught": 0,
+   "nightExitsNoticed": 0,
+   "nightExitsWoke": 0,
+   "nightExitsMissedAndReturned": 0
   },
   {
    "home": "ihs07",
@@ -266,7 +365,12 @@
    "nlVoiceOnly": 14,
    "nlWakes": 32,
    "nlWakeNights": 10,
-   "nlWakesNearExit": 0
+   "nlWakesNearExit": 0,
+   "nightExits": 0,
+   "nightExitsAlarmCaught": 0,
+   "nightExitsNoticed": 0,
+   "nightExitsWoke": 0,
+   "nightExitsMissedAndReturned": 0
   },
   {
    "home": "ihs08",
@@ -279,7 +383,12 @@
    "nlVoiceOnly": 2,
    "nlWakes": 30,
    "nlWakeNights": 13,
-   "nlWakesNearExit": 0
+   "nlWakesNearExit": 0,
+   "nightExits": 0,
+   "nightExitsAlarmCaught": 0,
+   "nightExitsNoticed": 0,
+   "nightExitsWoke": 0,
+   "nightExitsMissedAndReturned": 0
   },
   {
    "home": "ihs09",
@@ -292,7 +401,12 @@
    "nlVoiceOnly": 1,
    "nlWakes": 22,
    "nlWakeNights": 9,
-   "nlWakesNearExit": 0
+   "nlWakesNearExit": 0,
+   "nightExits": 1,
+   "nightExitsAlarmCaught": 1,
+   "nightExitsNoticed": 0,
+   "nightExitsWoke": 0,
+   "nightExitsMissedAndReturned": 0
   },
   {
    "home": "ihs11",
@@ -305,7 +419,12 @@
    "nlVoiceOnly": 0,
    "nlWakes": 16,
    "nlWakeNights": 6,
-   "nlWakesNearExit": 0
+   "nlWakesNearExit": 0,
+   "nightExits": 0,
+   "nightExitsAlarmCaught": 0,
+   "nightExitsNoticed": 0,
+   "nightExitsWoke": 0,
+   "nightExitsMissedAndReturned": 0
   },
   {
    "home": "mn83",
@@ -318,7 +437,12 @@
    "nlVoiceOnly": 7,
    "nlWakes": 34,
    "nlWakeNights": 13,
-   "nlWakesNearExit": 0
+   "nlWakesNearExit": 0,
+   "nightExits": 0,
+   "nightExitsAlarmCaught": 0,
+   "nightExitsNoticed": 0,
+   "nightExitsWoke": 0,
+   "nightExitsMissedAndReturned": 0
   },
   {
    "home": "mv001",
@@ -331,7 +455,12 @@
    "nlVoiceOnly": 82,
    "nlWakes": 56,
    "nlWakeNights": 23,
-   "nlWakesNearExit": 0
+   "nlWakesNearExit": 0,
+   "nightExits": 0,
+   "nightExitsAlarmCaught": 0,
+   "nightExitsNoticed": 0,
+   "nightExitsWoke": 0,
+   "nightExitsMissedAndReturned": 0
   },
   {
    "home": "mva002",
@@ -344,7 +473,12 @@
    "nlVoiceOnly": 34,
    "nlWakes": 20,
    "nlWakeNights": 7,
-   "nlWakesNearExit": 0
+   "nlWakesNearExit": 0,
+   "nightExits": 0,
+   "nightExitsAlarmCaught": 0,
+   "nightExitsNoticed": 0,
+   "nightExitsWoke": 0,
+   "nightExitsMissedAndReturned": 0
   },
   {
    "home": "mva003",
@@ -357,7 +491,12 @@
    "nlVoiceOnly": 0,
    "nlWakes": 4,
    "nlWakeNights": 2,
-   "nlWakesNearExit": 0
+   "nlWakesNearExit": 0,
+   "nightExits": 0,
+   "nightExitsAlarmCaught": 0,
+   "nightExitsNoticed": 0,
+   "nightExitsWoke": 0,
+   "nightExitsMissedAndReturned": 0
   },
   {
    "home": "mva004",
@@ -370,7 +509,12 @@
    "nlVoiceOnly": 4,
    "nlWakes": 36,
    "nlWakeNights": 18,
-   "nlWakesNearExit": 0
+   "nlWakesNearExit": 0,
+   "nightExits": 0,
+   "nightExitsAlarmCaught": 0,
+   "nightExitsNoticed": 0,
+   "nightExitsWoke": 0,
+   "nightExitsMissedAndReturned": 0
   },
   {
    "home": "tm002",
@@ -383,7 +527,12 @@
    "nlVoiceOnly": 10,
    "nlWakes": 22,
    "nlWakeNights": 12,
-   "nlWakesNearExit": 4
+   "nlWakesNearExit": 4,
+   "nightExits": 2,
+   "nightExitsAlarmCaught": 2,
+   "nightExitsNoticed": 2,
+   "nightExitsWoke": 2,
+   "nightExitsMissedAndReturned": 0
   },
   {
    "home": "tm003",
@@ -396,7 +545,12 @@
    "nlVoiceOnly": 13,
    "nlWakes": 2,
    "nlWakeNights": 1,
-   "nlWakesNearExit": 0
+   "nlWakesNearExit": 0,
+   "nightExits": 0,
+   "nightExitsAlarmCaught": 0,
+   "nightExitsNoticed": 0,
+   "nightExitsWoke": 0,
+   "nightExitsMissedAndReturned": 0
   },
   {
    "home": "tm004",
@@ -409,7 +563,12 @@
    "nlVoiceOnly": 0,
    "nlWakes": 0,
    "nlWakeNights": 0,
-   "nlWakesNearExit": 0
+   "nlWakesNearExit": 0,
+   "nightExits": 0,
+   "nightExitsAlarmCaught": 0,
+   "nightExitsNoticed": 0,
+   "nightExitsWoke": 0,
+   "nightExitsMissedAndReturned": 0
   },
   {
    "home": "tm009",
@@ -422,7 +581,12 @@
    "nlVoiceOnly": 6,
    "nlWakes": 0,
    "nlWakeNights": 0,
-   "nlWakesNearExit": 0
+   "nlWakesNearExit": 0,
+   "nightExits": 0,
+   "nightExitsAlarmCaught": 0,
+   "nightExitsNoticed": 0,
+   "nightExitsWoke": 0,
+   "nightExitsMissedAndReturned": 0
   },
   {
    "home": "tm010",
@@ -435,7 +599,12 @@
    "nlVoiceOnly": 11,
    "nlWakes": 16,
    "nlWakeNights": 7,
-   "nlWakesNearExit": 0
+   "nlWakesNearExit": 0,
+   "nightExits": 0,
+   "nightExitsAlarmCaught": 0,
+   "nightExitsNoticed": 0,
+   "nightExitsWoke": 0,
+   "nightExitsMissedAndReturned": 0
   },
   {
    "home": "tm011",
@@ -448,7 +617,12 @@
    "nlVoiceOnly": 19,
    "nlWakes": 10,
    "nlWakeNights": 4,
-   "nlWakesNearExit": 0
+   "nlWakesNearExit": 0,
+   "nightExits": 0,
+   "nightExitsAlarmCaught": 0,
+   "nightExitsNoticed": 0,
+   "nightExitsWoke": 0,
+   "nightExitsMissedAndReturned": 0
   },
   {
    "home": "tm014",
@@ -461,7 +635,12 @@
    "nlVoiceOnly": 0,
    "nlWakes": 26,
    "nlWakeNights": 11,
-   "nlWakesNearExit": 0
+   "nlWakesNearExit": 0,
+   "nightExits": 0,
+   "nightExitsAlarmCaught": 0,
+   "nightExitsNoticed": 0,
+   "nightExitsWoke": 0,
+   "nightExitsMissedAndReturned": 0
   }
  ]
 }
