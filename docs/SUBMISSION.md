@@ -107,6 +107,16 @@ Five entries in FRICTION_LOG.md, each with task, steps, expected versus actual, 
 
 ---
 
+## The live Ring API, actually called
+
+`docs/RING_LIVE.md` records a sweep against `https://api.amazonvision.com` on 17 September 2026: **three of three read endpoints answered.** `GET /v1/accounts/me`, `GET /v1/devices`, and `GET /v1/devices/{id}/events`, with the response shapes recorded and every identifier, email and token redacted by the capture script before it wrote the file.
+
+It also states what it does not establish: chime audio playback needs a physical device and a write scope, so the voice path is covered by tests and the documentation gap is filed as friction entry 1. Reproduce it with a thirty-minute Playground token:
+
+```
+RING_ACCESS_TOKEN="<token>" npx tsx apps/backend/scripts/ring-evidence.mts
+```
+
 ## Tracks and mini challenges
 
 Ring (primary) and Alexa+. AWS Builder and Open Source mini challenges.

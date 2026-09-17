@@ -64,7 +64,14 @@ function redact(value: unknown, depth = 0): unknown {
     }
     return out;
   }
-  if (typeof value === "string" && value.length > 120) return `${value.slice(0, 60)}...<truncated>`;
+  if (typeof value === "string") {
+    // Resource identifiers appear inside URL paths as well as in id fields
+    // (for example "/v1/devices/ava1.ring.device.XXXX/capabilities"), so a
+    // key-based rule alone is not enough. Found by reading our own output.
+    const scrubbed = value.replace(/ava1\.ring\.[a-z]+\.[A-Z0-9]+/g, "<id redacted>");
+    if (scrubbed.length > 120) return `${scrubbed.slice(0, 60)}...<truncated>`;
+    return scrubbed;
+  }
   return value;
 }
 

@@ -70,6 +70,10 @@ All demo data is simulated and marked as such in every response and UI. Nightlig
 
 MIT. See LICENSE.
 
+## The Ring API, called for real
+
+`docs/RING_LIVE.md`: three of three read endpoints answered against `api.amazonvision.com` on 17 September 2026, captured with a Playground token and redacted before writing. Reproduce with `RING_ACCESS_TOKEN="<token>" npx tsx apps/backend/scripts/ring-evidence.mts`.
+
 ## Documentation
 
 [SUBMISSION.md](docs/SUBMISSION.md) · [EVIDENCE.md](docs/EVIDENCE.md) · [DESIGN.md](docs/DESIGN.md) · [EVAL.md](docs/EVAL.md) · [AWS.md](docs/AWS.md) · [ACCESSIBILITY.md](docs/ACCESSIBILITY.md) · [FEATURE_REQUESTS.md](docs/FEATURE_REQUESTS.md) · [VIDEO_SCRIPT.md](docs/VIDEO_SCRIPT.md) · [FRICTION_LOG.md](FRICTION_LOG.md) · [PRODUCT_FEEDBACK.md](PRODUCT_FEEDBACK.md)
