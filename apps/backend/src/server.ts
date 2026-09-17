@@ -37,10 +37,21 @@ export function buildServer(opts: { store?: NightlightStore } = {}) {
   const deduper = new Deduper();
 
   // Capture the raw body for signature verification before JSON parsing.
+  //
+  // Two shapes have to survive this parser, and both were found against the
+  // deployed service rather than in a test.
+  //
   // An empty body with a JSON content-type is legal and common: MCP clients
   // send exactly that on DELETE when terminating a session, which used to
   // surface as a 500 (found by the Strands agent in apps/agent, not by the
   // conformance tests, because inject() sends no content-type by default).
+  //
+  // Malformed JSON must not fail here either. Handing the error to `done`
+  // lets Fastify answer with its own 500 envelope, but JSON-RPC is explicit
+  // that a body it cannot parse is a -32700 Parse error, and a transport
+  // 500 tells a client to retry something that will never succeed. So the
+  // parser reports the failure as data and each route decides what it
+  // means. Found by scripts/mcp-conform.mjs against the live Lambda.
   app.addContentTypeParser(
     "application/json",
     { parseAs: "buffer" },
@@ -53,7 +64,7 @@ export function buildServer(opts: { store?: NightlightStore } = {}) {
       try {
         done(null, { raw, json: JSON.parse(raw.toString("utf8")) });
       } catch (err) {
-        done(err as Error);
+        done(null, { raw, json: undefined, parseError: (err as Error).message });
       }
     },
   );
@@ -61,13 +72,19 @@ export function buildServer(opts: { store?: NightlightStore } = {}) {
   app.register(cors, { origin: true });
 
   app.post("/webhooks/ring", async (req, reply) => {
-    const parsedBody = req.body as { raw: Buffer; json: unknown };
+    const parsedBody = req.body as { raw: Buffer; json: unknown; parseError?: string };
     const signature = req.headers["x-signature"] as string | undefined;
+
+    // Signature first, then shape: an unsigned request is rejected before we
+    // say anything about its contents.
 
     const okReal = RING_SECRET !== "" && verifySignature(parsedBody.raw, signature, RING_SECRET);
     const okDemo = verifySignature(parsedBody.raw, signature, DEMO_SECRET);
     if (!okReal && !okDemo) {
       return reply.code(401).send({ error: "invalid signature" });
+    }
+    if (parsedBody.parseError) {
+      return reply.code(400).send({ error: "malformed JSON body" });
     }
 
     let webhook;

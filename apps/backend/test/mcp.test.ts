@@ -1,3 +1,4 @@
+import { createHmac } from "node:crypto";
 import { beforeAll, describe, expect, it } from "vitest";
 import { buildServer } from "../src/server";
 import { MCP_PROTOCOL_VERSION } from "../src/mcp";
@@ -235,6 +236,50 @@ describe("MCP session termination from a real client", () => {
       payload: "",
     });
     expect(del.statusCode).toBe(204);
+    await app.close();
+  });
+
+  it("answers a malformed body with -32700 rather than a transport 500", async () => {
+    // JSON-RPC is specific: a body the server cannot parse is a Parse error
+    // in the protocol, not a server failure. A 500 tells a client to retry
+    // something that will never succeed, and leaks the framework's error
+    // envelope besides. Found by scripts/mcp-conform.mjs against the live
+    // Lambda, where it returned Fastify's own 500 body.
+    const { app } = buildServer();
+    const res = await app.inject({
+      method: "POST",
+      url: "/mcp",
+      headers: { "content-type": "application/json" },
+      payload: "{ this is not json",
+    });
+    expect(res.statusCode).toBe(400);
+    expect(res.json().error.code).toBe(-32700);
+    await app.close();
+  });
+
+  it("a malformed webhook body is rejected on its signature first, then its shape", async () => {
+    // The same parser serves the Ring webhook route, so the fix has to leave
+    // that route refusing an unsigned request before it says anything at all
+    // about the contents.
+    const { app } = buildServer();
+    const unsigned = await app.inject({
+      method: "POST",
+      url: "/webhooks/ring",
+      headers: { "content-type": "application/json" },
+      payload: "{ this is not json",
+    });
+    expect(unsigned.statusCode).toBe(401);
+
+    const secret = "nightlight-demo-secret";
+    const body = "{ this is not json";
+    const signature = createHmac("sha256", secret).update(body).digest("hex");
+    const signed = await app.inject({
+      method: "POST",
+      url: "/webhooks/ring",
+      headers: { "content-type": "application/json", "x-signature": signature },
+      payload: body,
+    });
+    expect(signed.statusCode).toBe(400);
     await app.close();
   });
 });

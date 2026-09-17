@@ -244,7 +244,14 @@ export function registerMcp(
   app.post("/mcp", async (req, reply) => {
     if (!checkOrigin(req, reply)) return;
 
-    const body = (req.body as { json?: unknown })?.json;
+    const parsed = req.body as { json?: unknown; parseError?: string } | undefined;
+    if (parsed?.parseError) {
+      // JSON-RPC is specific here: a body the server cannot parse is -32700,
+      // and the HTTP status is a client error rather than a server one.
+      return reply.code(400).send(rpcError(null, -32700, "Parse error"));
+    }
+
+    const body = parsed?.json;
     if (Array.isArray(body)) {
       return reply
         .code(400)

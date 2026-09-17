@@ -80,6 +80,21 @@ It has already earned its place. Its first run flagged an 86.6 percent figure qu
 
 `docs/RING_LIVE.md`: three of three read endpoints answered against `api.amazonvision.com` on 17 September 2026, captured with a Playground token and redacted before writing. Reproduce with `RING_ACCESS_TOKEN="<token>" npx tsx apps/backend/scripts/ring-evidence.mts`.
 
+## Verify the live MCP server yourself
+
+Opening an MCP URL in a browser shows an error, because the protocol is a POST with a session handshake. So there is a probe:
+
+```
+npm run verify:live            # this project's deployed server
+npm run verify:live -- --all   # all three servers built for this hackathon
+```
+
+No install and no MCP client library: one dependency-free Node script against the deployed Lambda. It checks nineteen rules from spec revision 2025-11-25 over real HTTP, including the two shapes that in-process tests never produce: a DELETE carrying a JSON content-type and an empty body, and a body the server cannot parse.
+
+It grades what it checks. A MUST failure is a spec violation and exits non-zero; a SHOULD failure is reported and does not. Where the spec allows more than one answer, such as GET opening a stream or declining with 405, the probe accepts either and says which it saw. A conformance tool that grades its own preferences as violations teaches people to ignore it.
+
+It has already paid for itself. Its first run against the deployed Lambdas found that a malformed request body came back as an HTTP 500 carrying the framework's own error envelope, where JSON-RPC calls for a -32700 Parse error. Every in-process test passed while the live server was wrong, which is the whole argument for probing over real HTTP.
+
 ## Documentation
 
 [SUBMISSION.md](docs/SUBMISSION.md) · [EVIDENCE.md](docs/EVIDENCE.md) · [DESIGN.md](docs/DESIGN.md) · [EVAL.md](docs/EVAL.md) · [AWS.md](docs/AWS.md) · [ACCESSIBILITY.md](docs/ACCESSIBILITY.md) · [FEATURE_REQUESTS.md](docs/FEATURE_REQUESTS.md) · [VIDEO_SCRIPT.md](docs/VIDEO_SCRIPT.md) · [FRICTION_LOG.md](FRICTION_LOG.md) · [PRODUCT_FEEDBACK.md](PRODUCT_FEEDBACK.md)

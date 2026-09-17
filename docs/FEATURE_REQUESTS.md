@@ -120,6 +120,20 @@ One sentence in the session-termination section prevents it.
 
 ---
 
+### 10. Ship a transport conformance suite, or at least a status-code table
+
+**Important, and it is the highest-leverage thing the project could publish.**
+
+Every server author writes the same tests, guesses the same ambiguities, and finds out which guesses were wrong only when a real client arrives. We wrote fourteen conformance tests from the specification text, they all passed, and our deployed servers were still wrong about one rule.
+
+Two concrete asks, in order of value.
+
+First, publish the HTTP status mapping. The transport section is precise about sessions and about `Accept`, and silent about what status accompanies a JSON-RPC error. We had to reason it out: a request needing a session and carrying none is a client error at 400, an unknown or expired session is 404 so the client knows to start a new one rather than fix its request, an unparseable body is -32700 at 400 and not a 500, and a tool that rejects its arguments is a 200 carrying a JSON-RPC error because the transport succeeded. Every one of those is defensible and none of them is written down, so every implementation will differ and clients will paper over the differences.
+
+Second, ship the suite. A conformance runner that any server author can point at a URL would make the specification executable. We built a small one for ourselves (`scripts/mcp-conform.mjs`, dependency-free, nineteen graded checks, runs against any MCP server) and it found a live defect in two servers within a minute of first use. Grading matters: ours separates MUST from SHOULD and accepts either legal answer where the spec allows two, because a conformance tool that grades its own preferences as violations gets ignored.
+
+Friction log entry 7, and see also request 9, which is a rule this suite would have caught.
+
 ## What we are not asking for
 
 Worth stating, because a list of requests reads better with a boundary.

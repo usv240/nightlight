@@ -12,6 +12,7 @@
   ],
   "scripts": {
     "test": "vitest run",
+    "verify:live": "node scripts/mcp-conform.mjs",
     "typecheck": "tsc -b packages/engine packages/ring-webhook-kit packages/simulator apps/backend",
     "demo": "npm run demo -w @nightlight/backend",
     "dev": "npm run dev -w @nightlight/backend",
