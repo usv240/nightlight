@@ -30,6 +30,16 @@ We learned it partway in. Someone prototyping a front end first will learn it la
 
 Friction log entry 2.
 
+### 2b. Link the Playground from the first page of the docs
+
+**Important, and it is one hyperlink.**
+
+The Playground (released 28 May 2026) lets anyone test device, media and account APIs with a one-click thirty-minute OAuth token, with no app registration, no account linking, no subscription and no device. That is the single most compelling thing the Ring platform can say to a developer who has not committed yet.
+
+It is currently discoverable only by reading the release notes. The development guide's Test section describes the full "Log in with Ring" authorization flow instead, and the getting-started page does not mention it. We found it on our second day of looking, after architecting around a constraint the Playground had already lifted.
+
+Put it on the getting-started page, in the Test section, and ideally on the developer landing page, with the release note's own sentence. See FRICTION_LOG.md entry 6.
+
 ### 3. A webhook replay or test-delivery console
 
 **Important.**

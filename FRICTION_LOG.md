@@ -52,4 +52,14 @@ Format per entry: task attempted, steps taken, expected vs actual, severity (low
 - Workaround: probe actual invocation per candidate model (scripts/bedrock-check.mts), then pin the most capable model that answers: us.anthropic.claude-sonnet-4-5-20250929-v1:0 via the classic AnthropicBedrock client.
 - Suggestion: expose account allowlist gating in get-foundation-model-availability (a fifth field, or make authorizationStatus reflect it), and return it from the agreement-offer listing so the agreement is never accepted for a model the account cannot invoke.
 
+## Entry 6: the Playground is the answer to entry 2, and it arrived after we had architected around it (2026-09-17, positive with a note)
+
+- Task: call the live Ring Partner API to prove the client works, rather than only proving our own signed webhooks work.
+- Steps: searched the developer portal for a test console or token generation path, then found it in the release notes rather than in the development guide.
+- What exists: the **Playground**, released 28 May 2026, at <https://developer.amazon.com/ring/console/playground>. Quoting the release note: "a sandbox to test Ring device, media, and account APIs in real-time without creating an app, completing account linking, or having an active Ring subscription", with "one-click OAuth token generation (valid 30 minutes), an interactive API explorer with curl commands and live JSON responses" and "live view event simulation for Package, Vehicle, and Motion event types".
+- Why this is a positive entry: it removes the single hardest barrier to building on Ring. No app registration, no account linking, no subscription, and no physical device, which is exactly the wall a newcomer hits in their first hour. For a hackathon inviting outside developers, it is the most useful thing on the platform.
+- Severity of the remaining friction: low, and entirely about discoverability. We found it in the release notes on our second day of looking. It is not in the development guide's Test section, which describes the full "Log in with Ring" authorization flow instead, and it is not on the getting-started page. Someone reading the docs in order will architect around a constraint that the Playground has already lifted, which is what we did.
+- Workaround: none needed once found. `apps/backend/scripts/ring-evidence.mts` takes a Playground token and sweeps every read path in one command, because thirty minutes is short.
+- Suggestion: link the Playground from the first page of the getting-started guide and from the Test section of the development guide, with the sentence from the release note. "Test the APIs right now, without an app" is the strongest thing the portal can say to a developer who has not committed yet, and at the moment it is only findable by reading release notes.
+
 <!-- Add new entries above this line as they happen. -->
