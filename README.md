@@ -18,7 +18,7 @@ Built for the Build, Ship, Shape: Amazon Developer Hackathon (Ring track, plus t
 
 ## How it works
 
-1. Verified intake: Ring Partner API webhooks (human motion, doorbell presses, device status), HMAC SHA-256 verified and deduplicated by request id (`packages/ring-webhook-kit`, published as a standalone MIT package)
+1. Verified intake: Ring Partner API webhooks (human motion, doorbell presses, device status), HMAC SHA-256 verified and deduplicated by request id ([`packages/ring-webhook-kit`](packages/ring-webhook-kit), published on npm as [`ring-webhook-kit`](https://www.npmjs.com/package/ring-webhook-kit), MIT, zero dependencies)
 2. Baseline: a per-household hour-of-week activity baseline with EWMA daily updates and a 7 day shadow-mode warmup (`packages/engine`)
 3. Incidents: a pure, unit-tested state machine: voice first, then a gentle caregiver notification, then escalation contacts (`packages/engine`)
 4. Adapters: voice delivery (Ring chime audio where the device capability exists, Echo announcement fallback), snapshots, push and SMS (`apps/backend`)
@@ -61,7 +61,7 @@ curl -X POST http://127.0.0.1:8787/mcp \
 
 ```
 packages/engine            night engine: time, baseline, scoring, incident FSM, replay
-packages/ring-webhook-kit  open source Ring webhook intake (HMAC, types, dedupe)
+packages/ring-webhook-kit  open source Ring webhook intake (HMAC, types, dedupe); on npm
 packages/simulator         deterministic demo household
 apps/backend               Fastify service: webhook intake, effects, caregiver API
 ```

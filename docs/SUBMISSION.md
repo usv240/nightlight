@@ -44,7 +44,7 @@ Two more facts shaped this project. Amazon discontinued Alexa Together in May 20
 **The engine is deterministic and explainable end to end.** Baselines, scoring, and the incident state machine are pure, unit-tested functions; a language model never sits on the detection path, because predictable 3am behavior is a safety requirement. The event log is the source of truth and every read model (incidents, nights, baseline, the undisturbed streak) is a deterministic replay of it, which is why the live webhook path, the demo replay, and the tests can never disagree.
 
 - **Ring Partner API, called for real.** OAuth authorization-code exchange and proactive refresh against oauth.ring.com; device list with status and capabilities, event history, snapshot download, and chime audio playback against api.amazonvision.com. The registered Token Exchange and Account Link URLs are live endpoints on our Lambda, and one-way link nonces are validated exactly per spec: HMAC-SHA256 over `time:accountId`, URL-safe base64 unpadded, 600 second window, with test vectors.
-- **Verified webhook intake,** published as a standalone open source package (`ring-webhook-kit`): timing-safe HMAC SHA-256 verification against the raw body, typed payloads for every documented event type, and TTL-bounded idempotent deduplication, because processing a 3am doorway event twice would play the voice prompt twice.
+- **Verified webhook intake,** published as a standalone open source package, [`ring-webhook-kit`](https://www.npmjs.com/package/ring-webhook-kit) on npm: timing-safe HMAC SHA-256 verification against the raw body, typed payloads for every documented event type, and TTL-bounded idempotent deduplication, because processing a 3am doorway event twice would play the voice prompt twice.
 - **AWS:** DynamoDB holds the event log with conditional-put effect claiming, so two concurrent Lambda instances can never both play the voice; Lambda runs the same Fastify app that runs locally; Bedrock (Claude) words the caregiver's morning note from computed facts under a hard no-fact-changes prompt with a deterministic fallback; S3 and CloudFront serve the site. One CDK stack reproduces all of it.
 - **An MCP server** (Model Context Protocol, spec 2025-11-25, Streamable HTTP) exposes the household to agents: session issuance and enforcement, protocol-version validation, loopback origin checks, five tools including hands-free acknowledgement. Fourteen conformance tests, the fourteenth added after a real MCP client found a bug the first thirteen missed.
 - **Nothing fails into silence.** The voice is a chain, not a call: the family's own recording on the Ring chime, then an Amazon Polly synthesis for households that have not recorded one yet, and if both fail the caregiver is woken immediately, because the state machine would otherwise wait for a calm that was never attempted. The morning note runs a three-model Bedrock ladder and falls to the deterministic template, degrading in warmth and never in accuracy. Every response carries its provenance, and `GET /api/resilience` reports every degradation path. The fail-safe was a real bug found during this work and is pinned by ten tests. 116 tests total.
@@ -124,6 +124,23 @@ RING_ACCESS_TOKEN="<token>" npx tsx apps/backend/scripts/ring-evidence.mts
 Ring (primary) and Alexa+. AWS Builder and Open Source mini challenges.
 
 The rules cap winnings, not entries: "each project can only win one track prize and one mini challenge prize." Nightlight qualifies for Alexa+ on its own terms, not as a stretch. The Alexa+ track asks for a self-hosted MCP server implementing spec 2025-11-25 over Streamable HTTP, and `apps/backend/src/mcp.ts` is exactly that: session issuance and enforcement, protocol version validation, origin validation, and five household tools, with fourteen transport conformance tests against the spec revision. The proof that the surface is real rather than declared is that a second, independent client consumes it: the Strands agent in `apps/agent` has no database access and reaches the household only through those five tools. The Ring track surface and the Alexa+ track surface are the same surface.
+
+## Open source
+
+- Repository: https://github.com/usv240/nightlight (MIT, visible in About)
+- GitHub username: usv240
+- Contribution: https://www.npmjs.com/package/ring-webhook-kit
+
+**`ring-webhook-kit` (MIT, the open-source deliverable).** Verified intake for Ring Partner API webhooks, extracted from this project and published on npm with zero runtime dependencies: timing-safe HMAC SHA-256 verification against the raw request body, typed payloads for every documented event type, and TTL-bounded idempotent deduplication on `request_id`.
+
+It matters because signature verification is the single highest-risk piece of integration code anyone writes against Ring. Get it wrong permissively and you accept forged events that can play audio into someone's home; get it wrong strictly and you silently drop real ones. Every integrator writes it again, usually against their own assumptions rather than a real signed delivery. This is that code, tested, with a signed replay harness, so nobody has to.
+
+It is the same code the deployed backend runs, not a copy made for the submission.
+
+## AWS Builder
+
+Amazon Bedrock (the morning note through a three-model ladder with a deterministic floor), Amazon Polly (the synthesised fallback voice, neural engine), the Strands Agents SDK and Bedrock AgentCore Runtime (agents consuming our own MCP server as outside clients), DynamoDB (the event log as source of truth, every read model derived), Lambda with a function URL, S3, CloudFront and CDK. Each with its reason, and the services we deliberately did **not** use with the reasons for that, in [AWS.md](AWS.md).
+
 
 ---
 
