@@ -4,8 +4,8 @@
   "description": "Verified intake for Ring Partner API webhooks: HMAC SHA-256 signature verification, typed event payloads, and idempotent deduplication. Framework-agnostic, zero dependencies.",
   "license": "MIT",
   "type": "module",
-  "main": "src/index.ts",
-  "types": "src/index.ts",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
   "keywords": [
     "ring",
     "webhook",
@@ -14,6 +14,33 @@
     "smart-home"
   ],
   "scripts": {
-    "test": "vitest run"
+    "test": "vitest run",
+    "build": "tsc -b",
+    "prepublishOnly": "tsc -b"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "src",
+    "README.md",
+    "LICENSE"
+  ],
+  "sideEffects": false,
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/usv240/nightlight.git",
+    "directory": "packages/ring-webhook-kit"
+  },
+  "homepage": "https://github.com/usv240/nightlight/tree/main/packages/ring-webhook-kit",
+  "bugs": {
+    "url": "https://github.com/usv240/nightlight/issues"
+  },
+  "engines": {
+    "node": ">=18"
   }
 }
