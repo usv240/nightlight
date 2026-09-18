@@ -34,7 +34,9 @@ export function buildServer(opts: { store?: NightlightStore } = {}) {
   const adapters = new DemoAdapters();
   const store = opts.store ?? new MemoryStore();
   const runtime = new HouseholdRuntime(store, adapters, { householdId: "demo-house" });
-  const deduper = new Deduper();
+  // Reassignable, because the demo replay has to start a new run rather
+  // than look like Ring redelivering the same events. See the replay route.
+  let deduper = new Deduper();
 
   // Capture the raw body for signature verification before JSON parsing.
   //
@@ -143,6 +145,21 @@ export function buildServer(opts: { store?: NightlightStore } = {}) {
     const { seed } = (req.body as { json?: { seed?: number } })?.json ?? {};
     await runtime.reset();
     adapters.journal.length = 0;
+    /*
+      The deduper has to be reset too, and forgetting it made this endpoint
+      destroy the thing it exists to build.
+
+      Every replayed event carries the same request id as last time, which
+      is exactly what duplicate suppression is for when Ring redelivers a
+      webhook. On a second replay that correct behaviour dropped all 204
+      events, leaving a single night on the board and a live demo showing
+      "no incidents recorded".
+
+      A deliberate replay is a new run, not a redelivery, so it gets a new
+      deduper. Anyone clicking the demo twice, including a judge, now gets
+      the same month both times.
+    */
+    deduper = new Deduper();
     const demo = generateDemoMonth(seed ?? 42);
     // Drive the real webhook route for fidelity: sign, post, verify, dedupe.
     for (const event of demo.events) {
