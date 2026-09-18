@@ -1,4 +1,4 @@
-export { verifySignature, signBody } from "./verify";
+export { verifySignature, signBody } from "./verify.js";
 export {
   parseWebhook,
   WebhookParseError,
@@ -6,5 +6,5 @@ export {
   type RingWebhookEnvelope,
   type RingWebhookEventType,
   type RingWebhookMeta,
-} from "./types";
-export { Deduper } from "./dedupe";
+} from "./types.js";
+export { Deduper } from "./dedupe.js";

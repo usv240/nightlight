@@ -1,6 +1,6 @@
 {
   "name": "ring-webhook-kit",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Verified intake for Ring Partner API webhooks: HMAC SHA-256 signature verification, typed event payloads, and idempotent deduplication. Framework-agnostic, zero dependencies.",
   "license": "MIT",
   "type": "module",
