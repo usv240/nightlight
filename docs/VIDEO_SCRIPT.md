@@ -191,6 +191,32 @@ Never cut: the live `npm run demo`, the eighteen-nights number, or the
 recall figure. Those three are tech implementation, design and honesty,
 and each one is a whole criterion.
 
+## Upload checklist
+
+- Under three minutes. Check the real duration, not your estimate.
+- YouTube or Vimeo, **public**, not unlisted.
+- English.
+- No third-party music or footage you do not have rights to.
+- Title and description name the Ring track.
+- Paste the link into the Devpost submission and into `docs/SUBMISSION.md`,
+  which currently says "add when published".
+
+## Every number spoken here, and where it comes from
+
+Live or committed as of recording. If anything changes before you shoot,
+re-check it rather than trusting this table.
+
+| Spoken | Source |
+|---|---|
+| 2,936 nights, 34 homes | `apps/eval/results/casas-hh.json` |
+| 14,068 against 774, 94.5 percent | same file, re-derived by `apps/eval/test/claims.test.ts` |
+| 7 of 34 exits, 26 of 27 returned | same file, recall table in `docs/EVAL.md` |
+| Eighteen nights slept | live `GET /api/summary` |
+| 19 of 19 spec checks | `node scripts/mcp-conform.mjs` |
+| Six in ten wander | `docs/EVIDENCE.md`, with citation |
+| Seventy percent cite the nights | Pollak and Perlick 1991, in `docs/EVIDENCE.md` |
+| 6.8 billion care hours | Alzheimer's Association 2026, in `docs/EVIDENCE.md` |
+
 ## Things not to say
 
 Do not say it detects wandering. The corpus contains no wandering and the
