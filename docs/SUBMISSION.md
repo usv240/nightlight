@@ -119,6 +119,16 @@ It also states what it does not establish: chime audio playback needs a physical
 RING_ACCESS_TOKEN="<token>" npx tsx apps/backend/scripts/ring-evidence.mts
 ```
 
+## Built during the hackathon
+
+This project did not exist before the submission window. The first commit
+is 2026-09-01 and the whole repository is public history: every file, every
+number and every correction was written for this hackathon.
+
+Nothing here was adapted from earlier work, so the rules' question about
+what changed during the window has the simplest possible answer, which is
+all of it.
+
 ## Tracks and mini challenges
 
 Ring (primary) and Alexa+. AWS Builder and Open Source mini challenges.
