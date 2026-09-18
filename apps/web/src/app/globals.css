@@ -140,3 +140,77 @@ body {
     scroll-behavior: auto !important;
   }
 }
+
+/*
+  The night band.
+
+  Nightlight is a product about 3am, and the page used to open in cream.
+  The hero is now literally night, and the page lightens into the evidence
+  below it, which is the shape of the product itself: the night happens,
+  then in the morning you read about it. It is a fixed dark surface rather
+  than a theme, so it reads the same whichever theme a visitor arrives in,
+  and the rest of the page still answers to the toggle.
+*/
+
+/*
+  A horizon rather than a seam. The sticky nav keeps the page's own theme
+  because it has to sit over daylight once you scroll, so the edge between
+  it and the night band is unavoidable. A warm hairline in the accent that
+  means "the voice" makes that edge read as a horizon line instead of a
+  rendering mistake. A soft gradient was tried first and looked like haze.
+*/
+.night-band {
+  border-top: 1px solid color-mix(in srgb, var(--accent) 45%, transparent);
+  --band-ink: #f3f6fb;
+  --band-muted: #9fb0c9;
+  --band-line: #22344f;
+  position: relative;
+  background:
+    radial-gradient(1100px 420px at 18% -10%, #1d3454 0%, transparent 62%),
+    linear-gradient(180deg, #0c1626 0%, #101d31 100%);
+  color: var(--band-ink);
+}
+
+
+.night-band-muted {
+  color: var(--band-muted);
+}
+
+/* One mark per night. Colour is the signal and nothing else carries it. */
+.night-mark {
+  display: inline-block;
+  width: 100%;
+  height: 30px;
+  border-radius: 4px;
+  transition: opacity 260ms ease-out;
+}
+
+.night-mark--legend {
+  width: 11px;
+  flex: none;
+  height: 18px;
+  vertical-align: middle;
+}
+
+/*
+  Quiet: present, unremarkable, and the thing a caregiver wants most of.
+  It has to be clearly visible so the row reads as thirty nights rather
+  than as three events, and clearly recessive so the exceptions carry.
+*/
+.night-mark[data-kind="quiet"] {
+  background: #23385a;
+}
+
+/* The voice played and nobody was woken. The product's whole point. */
+.night-mark[data-kind="voice"] {
+  background: #e8a33d;
+}
+
+/* The voice did not settle it and a person was woken. */
+.night-mark[data-kind="woken"] {
+  background: #d4573f;
+}
+
+.night-legend-text {
+  color: var(--band-muted);
+}

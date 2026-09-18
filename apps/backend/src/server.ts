@@ -69,7 +69,28 @@ export function buildServer(opts: { store?: NightlightStore } = {}) {
     },
   );
 
-  app.register(cors, { origin: true });
+  /*
+    CORS is handled by exactly one layer.
+
+    On Lambda the function URL's own CORS configuration reflects the
+    request origin. If this app also registered CORS, the response would
+    carry two Access-Control-Allow-Origin headers, and every browser
+    rejects that outright, even when both values are identical.
+
+    That is not hypothetical: it shipped. The deployed API answered
+    /api/summary with the header twice, so the caregiver app could not
+    load its own data in any browser, while curl reported a clean 200 and
+    every server test passed. The identical bug was found and fixed in a
+    sibling project weeks earlier and was not carried across to here,
+    which is the actual lesson.
+
+    Locally there is no function URL, so the middleware is needed and is
+    registered. Guarding on the Lambda runtime variable keeps exactly one
+    layer responsible in each environment.
+  */
+  if (!process.env.AWS_LAMBDA_FUNCTION_NAME) {
+    app.register(cors, { origin: true });
+  }
 
   app.post("/webhooks/ring", async (req, reply) => {
     const parsedBody = req.body as { raw: Buffer; json: unknown; parseError?: string };

@@ -22,7 +22,20 @@ import { InfoButton } from "../../components/InfoButton";
  * same engine, clearly labeled.
  */
 
-const BACKEND = (process.env.NEXT_PUBLIC_BACKEND_URL ?? "http://127.0.0.1:8787").replace(/\/$/, "");
+/**
+ * The backend this page talks to. NEXT_PUBLIC_BACKEND_URL at build time.
+ *
+ * The fallback used to be localhost, which meant a plain `next build`
+ * produced a site that silently pointed at a machine the visitor does not
+ * have. That is exactly what shipped once: the deployed bundle carried
+ * 127.0.0.1:8787 and the caregiver app could never load. The fallback is
+ * now the deployed function URL, so forgetting the variable degrades to
+ * "points at production" rather than to "points at nothing".
+ */
+const BACKEND = (
+  process.env.NEXT_PUBLIC_BACKEND_URL ??
+  "https://qdvxx267lgnsitq242aplz722a0zuien.lambda-url.us-east-1.on.aws"
+).replace(/\/$/, "");
 
 interface MorningNote {
   text: string;
@@ -324,7 +337,7 @@ export default function CaregiverApp() {
     <div className="min-h-screen bg-bg text-ink">
       <header className="sticky top-0 z-40 border-b border-line bg-[color-mix(in_srgb,var(--bg)_85%,transparent)] backdrop-blur">
         <div className="mx-auto flex h-16 max-w-[900px] items-center justify-between px-4 sm:px-6">
-          <Link href="/" className="text-lg font-semibold tracking-tight">
+          <Link prefetch={false} href="/" className="text-lg font-semibold tracking-tight">
             N<span className="text-[var(--accent)]">i</span>ghtlight
           </Link>
           <div className="flex items-center gap-3">

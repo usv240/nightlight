@@ -1,4 +1,5 @@
 import { AnthropicBedrock } from "@anthropic-ai/bedrock-sdk";
+import { sanitiseModelText } from "./sanitise";
 import type { NightSummary } from "@nightlight/engine";
 
 /**
@@ -166,7 +167,9 @@ export async function phraseMorningNote(
       attempts.push({ model, ok: true });
       return {
         nightOf: night.nightOf,
-        text,
+        // The house style is enforced here rather than requested in the
+        // prompt, because a prompt is a preference and this is a rule.
+        text: sanitiseModelText(text),
         source: "bedrock",
         factsText,
         model,

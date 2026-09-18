@@ -14,6 +14,34 @@ export interface InfoEntry {
 }
 
 export const INFO: Record<string, InfoEntry> = {
+  "night-strip": {
+    id: "night-strip",
+    term: "What this row shows",
+    plain:
+      "One mark for each night of the demonstration month. Most nights nothing happens and nobody is woken, which is the point: the product is the run of quiet marks, not the events.",
+    technical:
+      "The month is the committed simulator output that the live API replays through the real webhook route, so the marks are the engine's own decisions rather than a drawing. A mark is warm when the recorded family voice played and settled a doorway event with nobody woken, and red when it did not settle and the caregiver was woken.",
+  },
+  casas: {
+    id: "casas",
+    term: "The CASAS corpus",
+    plain:
+      "Thirty-four real homes, instrumented with door and motion sensors for about two months each by Washington State University, and published for anyone to use. We did not collect it, which is why the numbers taken from it are worth more than numbers from data we made ourselves.",
+    technical:
+      "CASAS HH corpus, Zenodo record 15708568, CC-BY-4.0. Residents labelled their own activities, including leaving and entering the home, and those labels are the ground truth the recall figure is measured against.",
+    sourceUrl: "https://zenodo.org/records/15708568",
+    sourceLabel: "The corpus on Zenodo",
+  },
+  "what-it-cost": {
+    id: "what-it-cost",
+    term: "What the restraint cost",
+    plain:
+      "Waking someone less often is easy if you simply stop noticing things, so the reduction only means something next to what it missed. Of 34 labelled night-time exits in that corpus, Nightlight flagged 7. Of the 27 it did not flag, 26 were exits the resident came back from within half an hour.",
+    technical:
+      "The misses concentrate in households where the door already opens about thirty times a night, which is a personal baseline suppressing what a household has made ordinary. In the three homes with quiet nights it flagged 6 of 7. That split is drawn after looking at the data, on eight homes and 34 exits, and is reported as a description rather than a rate. The corpus contains no wandering, so this is not a wandering-detection rate and is not offered as one.",
+    sourceUrl: "https://github.com/usv240/nightlight/blob/main/docs/EVAL.md",
+    sourceLabel: "The recall table and its limits",
+  },
   wandering: {
     id: "wandering",
     term: "Wandering",

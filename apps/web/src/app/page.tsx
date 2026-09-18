@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Nav } from "../components/Nav";
+import { NightStrip } from "../components/NightStrip";
 import { NightDemo } from "../components/NightDemo";
 import { InfoButton } from "../components/InfoButton";
 
@@ -151,54 +152,95 @@ export default function Home() {
       <Nav />
 
       <main id="main">
-      {/* Hero */}
-      <section className="mx-auto max-w-[1120px] px-4 pb-20 pt-16 sm:px-6 sm:pt-24">
-        <div className="max-w-[720px]">
-          <p className="mb-4 inline-block rounded-full border border-line bg-surface px-3 py-1 text-xs font-medium text-muted">
-            Built on Ring, for the people who never sleep
-          </p>
-          <h1 className="text-4xl font-semibold leading-tight tracking-tight sm:text-6xl">
-            The night shift,{" "}
-            <span className="text-[var(--accent)]">handled.</span>
-          </h1>
-          <p className="mt-6 max-w-[640px] text-lg leading-relaxed text-muted">
-            Nightlight learns your household&apos;s nights from the Ring
-            doorbell it already has, answers a 3am doorway with a recorded
-            family voice, and wakes the caregiver only when the voice is not
-            enough.
-          </p>
-          <p className="mt-4 max-w-[640px] rounded-[var(--radius-md)] border border-[var(--accent)] bg-accent-soft p-4 text-sm leading-relaxed text-ink">
-            <span className="font-semibold">Measured, not promised:</span>{" "}
-            across 2,936 nights of 34 real homes from the public CASAS corpus,
-            a standard door alarm wakes the caregiver 14,068 times. Nightlight:
-            774. A 94.5 percent reduction, on data we did not author.{" "}
-            <a
-              href="https://github.com/usv240/nightlight/blob/main/docs/EVAL.md"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="font-medium text-[var(--primary)] underline underline-offset-2"
-            >
-              Method and full results
-            </a>
-          </p>
-          <div className="mt-8 flex flex-wrap gap-3">
-            <a
-              href="#demo"
-              className="rounded-[var(--radius-md)] bg-[var(--primary)] px-6 py-3 text-sm font-medium text-[var(--primary-contrast)] transition-opacity hover:opacity-90"
-            >
-              Try the live demo
-            </a>
-            <a
-              href="#how"
-              className="rounded-[var(--radius-md)] border border-line bg-surface px-6 py-3 text-sm font-medium text-ink transition-colors hover:border-primary"
-            >
-              See how it works
-            </a>
+      {/*
+        The hero is the night. The product is about 3am, and a cream page
+        said nothing about that. The band is a fixed dark surface rather
+        than a theme, so it reads the same however a visitor arrives, and
+        the page lightens into the evidence below it: the night happens,
+        then in the morning you read about it.
+      */}
+      <section className="night-band border-b border-[var(--band-line)]">
+        <div className="mx-auto grid max-w-[1120px] gap-12 px-4 pb-16 pt-14 sm:px-6 sm:pt-20 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] lg:items-center">
+          <div>
+            <p className="mb-4 inline-block rounded-full border border-[var(--band-line)] px-3 py-1 text-xs font-medium night-band-muted">
+              Built on Ring, for the people who never sleep
+            </p>
+            <h1 className="text-4xl font-semibold leading-tight tracking-tight sm:text-6xl">
+              The night shift,{" "}
+              <span className="text-[var(--accent)]">handled.</span>
+            </h1>
+            <p className="mt-6 max-w-[560px] text-lg leading-relaxed night-band-muted">
+              Nightlight learns your household&apos;s nights from the Ring
+              doorbell it already has, answers a 3am doorway with a recorded
+              family voice, and wakes the caregiver only when the voice is
+              not enough.
+            </p>
+            <div className="mt-8 flex flex-wrap gap-3">
+              <a
+                href="#demo"
+                className="rounded-[var(--radius-md)] bg-[var(--accent)] px-6 py-3 text-sm font-medium text-[#14233a] transition-opacity hover:opacity-90"
+              >
+                Watch a night unfold
+              </a>
+              <a
+                href="#how"
+                className="rounded-[var(--radius-md)] border border-[var(--band-line)] px-6 py-3 text-sm font-medium transition-colors hover:border-[var(--accent)]"
+                style={{ color: "var(--band-ink)" }}
+              >
+                See how it works
+              </a>
+            </div>
+            <p className="mt-8 text-xs uppercase tracking-wider night-band-muted">
+              Ring Partner API · AWS · Open source (MIT)
+            </p>
           </div>
-          <p className="mt-8 text-xs uppercase tracking-wider text-muted">
-            Ring Partner API · AWS · Open source (MIT)
-          </p>
+
+          {/*
+            The product's output, before any explanation of it: a month of
+            nights, mostly quiet. The shape carries the argument faster than
+            the paragraph beside it can.
+          */}
+          <div className="rounded-[var(--radius-lg)] border border-[var(--band-line)] bg-[rgb(255_255_255/0.03)] p-6 sm:p-7">
+            <p className="text-xs font-semibold uppercase tracking-wider text-[var(--accent)]">
+              One household, thirty nights
+              <InfoButton id="night-strip" />
+            </p>
+            <div className="mt-5">
+              <NightStrip />
+            </div>
+            <p className="mt-5 text-[13px] leading-relaxed night-band-muted">
+              Every mark is one night. A standard door alarm would have woken
+              this caregiver on each of the three nights something happened.
+              Nightlight woke them once.
+            </p>
+          </div>
         </div>
+      </section>
+
+      {/* The measured claim, in daylight, where the evidence lives. */}
+      <section className="mx-auto max-w-[1120px] px-4 pt-12 sm:px-6">
+        <p className="max-w-[760px] rounded-[var(--radius-md)] border border-[var(--accent)] bg-accent-soft p-4 text-sm leading-relaxed text-ink">
+          <span className="font-semibold">Measured, not promised:</span>{" "}
+          across 2,936 nights of 34 real homes from the public CASAS corpus
+          <InfoButton id="casas" />,
+          a standard door alarm wakes the caregiver 14,068 times. Nightlight:
+          774. A 94.5 percent reduction, on data we did not author.{" "}
+          <span className="font-semibold">
+            And what that restraint cost, on the same data:
+          </span>
+          <InfoButton id="what-it-cost" />{" "}
+          of 34 resident-labelled night-time exits, Nightlight flagged 7, and
+          26 of the 27 it did not flag were exits the resident returned from
+          within thirty minutes.{" "}
+          <a
+            href="https://github.com/usv240/nightlight/blob/main/docs/EVAL.md"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="font-medium text-[var(--primary)] underline underline-offset-2"
+          >
+            Method and full results
+          </a>
+        </p>
       </section>
 
       {/* What / Why / How, for a first-time reader */}
@@ -510,7 +552,7 @@ curl http://127.0.0.1:8787/api/summary`}
               Every door alarm on the market wakes the caregiver.{" "}
               <span className="text-ink">Nightlight's product is the nights it does not.</span>
             </p>
-            <Link
+            <Link prefetch={false}
               href="/app"
               className="text-sm font-medium text-[var(--primary)] underline underline-offset-2"
             >
