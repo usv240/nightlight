@@ -17,7 +17,9 @@
     "demo": "npm run demo -w @nightlight/backend",
     "dev": "npm run dev -w @nightlight/backend",
     "web:dev": "npm run dev -w @nightlight/web",
-    "web:build": "npm run build -w @nightlight/web"
+    "web:build": "npm run build -w @nightlight/web",
+    "build:packages": "tsc -b packages/engine packages/ring-webhook-kit packages/simulator",
+    "pretest": "npm run build:packages"
   },
   "devDependencies": {
     "@types/node": "^24.0.0",

@@ -12,8 +12,8 @@
     "next": "16.3.4",
     "react": "19.2.8",
     "react-dom": "19.2.8",
-    "@nightlight/engine": "0.1.0",
-    "@nightlight/simulator": "0.1.0"
+    "@nightlight/engine": "*",
+    "@nightlight/simulator": "*"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",

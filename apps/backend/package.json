@@ -18,9 +18,9 @@
     "@aws-sdk/lib-dynamodb": "^3.1123.0",
     "@fastify/aws-lambda": "^6.4.1",
     "@fastify/cors": "^10.0.0",
-    "@nightlight/engine": "0.1.0",
-    "@nightlight/simulator": "0.1.0",
+    "@nightlight/engine": "*",
+    "@nightlight/simulator": "*",
     "fastify": "^5.0.0",
-    "ring-webhook-kit": "0.1.0"
+    "ring-webhook-kit": "*"
   }
 }
