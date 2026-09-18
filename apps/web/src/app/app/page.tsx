@@ -392,6 +392,21 @@ export default function CaregiverApp() {
             {data.streak}
           </p>
           <p className="mt-2 text-muted">in a row, and counting</p>
+          {/*
+            Two different numbers describe this month and a reviewer meets
+            them on two different pages: the landing page shows 29 of 30
+            nights undisturbed for the whole month, and this shows the
+            current unbroken run. Without saying so, the number appears to
+            change between pages for no reason. Stating both here, with
+            the relationship between them, costs one line and removes the
+            question.
+          */}
+          {data.nights.length > 0 && (
+            <p className="mt-1 text-sm text-muted">
+              {data.nights.filter((n) => n.undisturbed).length} of the last{" "}
+              {data.nights.length} nights undisturbed in total
+            </p>
+          )}
           {(data.note || lastNight) && (
             <div className="mx-auto mt-6 max-w-[560px] rounded-[var(--radius-md)] border border-line bg-surface-raised p-4 text-left">
               <p className="text-sm leading-relaxed text-muted">

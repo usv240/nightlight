@@ -185,10 +185,17 @@ body {
   transition: opacity 260ms ease-out;
 }
 
+/*
+  Legend swatches are larger than the text beside them on purpose. The
+  entire visual argument of this page rests on two colours meaning two
+  specific things, and a reviewer watching a video has about one second to
+  find them. A swatch the same size as body type is not findable in one
+  second.
+*/
 .night-mark--legend {
-  width: 11px;
+  width: 16px;
   flex: none;
-  height: 18px;
+  height: 24px;
   vertical-align: middle;
 }
 

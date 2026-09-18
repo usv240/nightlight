@@ -115,18 +115,25 @@ export function NightStrip() {
         <span className="flex items-center gap-2">
           <span className="night-mark night-mark--legend" data-kind="quiet" />
           <span className="night-legend-text">
-            {slept} nights slept through
+            <strong className="font-semibold">
+              {slept} of {NIGHTS.length}
+            </strong>{" "}
+            nights slept through
           </span>
         </span>
         <span className="flex items-center gap-2">
           <span className="night-mark night-mark--legend" data-kind="voice" />
           <span className="night-legend-text">
-            {voice} settled by the voice at the door
+            <strong className="font-semibold">{voice}</strong> the voice
+            settled it, nobody woken
           </span>
         </span>
         <span className="flex items-center gap-2">
           <span className="night-mark night-mark--legend" data-kind="woken" />
-          <span className="night-legend-text">{woken} night you were woken</span>
+          <span className="night-legend-text">
+            <strong className="font-semibold">{woken}</strong> the voice was
+            not enough, you were woken
+          </span>
         </span>
       </div>
     </figure>

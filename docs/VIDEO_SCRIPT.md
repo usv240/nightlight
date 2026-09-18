@@ -42,6 +42,13 @@ npm run demo                  # confirm it prints the month
 second. It does not scroll, it arrives. Use at least 65 rows, or the month
 scrolls away and you will hunt for dates on camera.
 
+**And make it readable at video resolution.** A judge should not be
+squinting at a terminal to follow you. Set the font large enough that the
+two lines below are legible in a 1080p frame at normal viewing distance,
+then rehearse the cursor movement until you can land on each one without
+looking. If you find yourself hunting on camera, the take is wasted even
+if the words are right.
+
 The two lines you point at:
 
 | Line | What it says |
@@ -82,11 +89,19 @@ has to land first, on its own.
 
 ## 0:20 to 0:38 Thirty nights
 
-**Point at:** the marks, then the legend.
+**Point at:** the marks, then rest on each legend swatch for about a
+second as you name it. The entire visual argument rests on two colours
+meaning two specific things, so amber and red have to be unambiguous
+within seconds. The swatches are deliberately larger than the text beside
+them for exactly this.
 
 > **"One mark, one night, from the Ring doorbell a family already owns. Amber: the voice settled it. Red: it did not."**
 
 > **"Twenty-nine nights slept through. That row is the product."**
+
+**Hold for a full second here.** Do not move the cursor, do not start the
+next sentence. It is one of the two strongest lines in the script and it
+needs the silence after it to land.
 
 ---
 
@@ -123,6 +138,14 @@ then the big number.
 
 > **"The caregiver's app, live against the deployed API. One number: eighteen nights slept, in a row."**
 
+**Point at:** the line directly beneath it, "29 of the last 30 nights
+undisturbed in total", for a beat. No narration needed.
+
+The landing page said twenty-nine and this says eighteen, and without that
+second line a judge would reasonably wonder why the number changed. One is
+the whole month, the other is the current unbroken run. The page now says
+both, so you do not have to.
+
 > **"Not incidents detected. A headline about how much it caught builds what families already have."**
 
 ---
@@ -142,7 +165,11 @@ Read this slowly.
 
 ## 1:45 to 2:15 The evidence
 
-**Navigate to:** EVAL.md. **Point at:** the headline table.
+**Navigate to:** EVAL.md. **Point at:** the headline table, and then rest
+the cursor on **94.5 percent** for a beat without saying it. It is the
+strongest number in the project and the close says it out loud; seeing it
+here first makes the ending land as a reminder rather than as a new
+claim.
 
 > **"Across thirty-four real homes, a standard alarm would have woken the caregiver fourteen thousand times. Nightlight woke them seven hundred and seventy-four."**
 
@@ -153,9 +180,12 @@ Read this slowly.
 Say it plainly and move on. It is the line that makes every other number
 believable.
 
-**Optional, no narration:** cut for two seconds to a terminal already
-showing `node scripts/mcp-conform.mjs` output and the npm package page.
-Both claims are worth showing and neither is worth spending words on.
+**Optional, and genuinely optional:** cut for two seconds to a terminal
+already showing `node scripts/mcp-conform.mjs` output and the npm package
+page. **If the recording feels rushed at any point, drop this.** The
+repository already carries the live MCP verification and the Ring
+integration in full, and two seconds of terminal is a poor trade against a
+close that breathes.
 
 ---
 
@@ -169,9 +199,15 @@ Pause.
 
 > **"Nightlight is not about detecting more. It is about knowing when intervention is actually needed."**
 
-**Last frame:** the quiet row on screen.
+**Last frame:** the quiet row of nights, full frame. Get back to it
+*before* the final sentence, not after, so the last thing on screen is the
+product rather than a terminal or a GitHub page.
 
 > **"Nightlight. The night shift, handled."**
+
+**Hold the shot for another one to two seconds after you stop speaking.**
+Cutting on the last syllable makes a video feel like it ran out. Letting
+the quiet row sit there is the argument.
 
 Three sentences, one idea. Nothing about protocols, packages or care
 economics competes with the ending.
