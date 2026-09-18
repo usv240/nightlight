@@ -1,134 +1,199 @@
-# Nightlight demo video: shot list
+# Demo video script: Nightlight
 
-Target length 2:45. Hard limit 3:00; judges are not required to watch past it, so the best material is in the first 45 seconds. Everything on screen is the live deployment, not a local build, so nothing in the video can differ from what a judge clicks.
+Two minutes forty. Hard ceiling three minutes, and the rules say judges are
+not required to watch past it, so nothing important lives after 2:00.
 
-Rules this video must satisfy, and where it does:
+## What this script is built to do
 
-- Ring: "show your project working through a simulator or an actual Ring device." Shot 5 replays a labelled simulated household through the real, HMAC-verified webhook route.
-- Alexa+: "show your MCP server (spec 2025-11-25+, Streamable HTTP) in action." Shots 7 and 8.
-- No third-party trademarks, music, or footage. Narration only. No background track.
-- English, public on YouTube.
+Four judging criteria, each with a beat that lands before the judge can
+get bored. If a beat is cut for time, cut from the bottom of its section,
+never the top.
 
-## Before you press record
+| Criterion | Where it lands | The beat |
+|---|---|---|
+| Quality of the idea | 0:00 to 0:20 | Every door alarm wakes the caregiver. This one tries a voice first. |
+| Tech implementation | 0:40 to 1:35 | A signed Ring webhook drives the real pipeline, live, on screen. |
+| Design | 1:00 to 1:50 | The dashboard's headline number is nights you slept, not incidents detected. |
+| Potential impact | 1:50 to 2:40 | 2,936 real nights, and the honest cost of the restraint. |
 
-Do all of this first so every output is warm and known. Cold starts on camera look like bugs.
-
-```
-# 1. Terminal, large font (18pt+), dark theme, window sized to 1280x720.
-export API=https://qdvxx267lgnsitq242aplz722a0zuien.lambda-url.us-east-1.on.aws
-
-# 2. Warm the household and confirm the numbers you will read aloud.
-curl -s -X POST $API/api/demo/replay -H "content-type: application/json" -d '{"seed":42}'
-#    expect: simulated:true, incidents:3, undisturbedNights:27, totalNights:30
-
-# 3. Warm the morning note (first call may take a few seconds).
-curl -s $API/api/morning-note | python -m json.tool
-#    expect: "source": "bedrock", a "model" field, and an "attempts" array
-
-# 4. Warm the resilience report.
-curl -s $API/api/resilience | python -m json.tool
-
-# 5. Warm the MCP server and the agent. Run the agent once now; run it again on camera.
-cd apps/agent && python week_review.py --url $API/mcp
-```
-
-Browser: https://d28hskpupjctiz.cloudfront.net at 125 percent zoom, light theme to start. Open https://d28hskpupjctiz.cloudfront.net/app in a second tab. Close every other tab. Hide bookmarks bar.
-
-Record at 1080p, 30fps. Speak slowly. Pause half a second before each click so the cut is clean.
-
-## Shot list
-
-### Shot 1: the problem (0:00 to 0:15)
-
-Screen: landing page hero. Do not scroll yet.
-
-Say: "Six in ten people living with dementia will wander, most dangerously at night. Every door alarm on the market answers the same way: it wakes the exhausted caregiver. Seventy percent of families who move a relative into care cite the nights."
-
-### Shot 2: the insight (0:15 to 0:40)
-
-Screen: scroll slowly to the evidence citations. Let the Rowe 2010 card be readable for two seconds.
-
-Say: "That answer has already been tested. A 2009 monitor that woke the caregiver cut injuries and unattended exits. Its companion trial then measured the caregivers for a year: their sleep did not improve on any measure. They felt better and slept the same, because waking them was the only response available. Nightlight changes what happens in the seconds after detection."
-
-### Shot 3: the product (0:40 to 1:05)
-
-Screen: switch to the /app tab. Dashboard loads. Point with the cursor, do not click yet.
-
-Say: "This is the caregiver's dashboard, on a labelled simulated household, running on the real engine. Thirty nights. Twenty-seven undisturbed. The metric at the top is the product: nights the caregiver was not woken. Not incidents detected."
-
-Screen: scroll to Recent nights. Hover the night marked as settled by the voice.
-
-Say: "On this night the front door opened at ten to midnight. A recorded family voice played at the door. Nobody was woken. That is the whole idea: voice first, caregiver second, alarm never."
-
-### Shot 4: the caregiver's controls (1:05 to 1:25)
-
-Screen: scroll to the night window inputs. Change "Night starts" by one hour, click "Save hours". Watch the recomputed counts change.
-
-Say: "The night window is the family's own hours. Change it, and every night in the history is recomputed from the same event log, because nights are computed, never stored."
-
-Screen: scroll to "Record your message". Click it, say four words into the mic, click "Stop recording". Do not play it back on camera; time is tight.
-
-Say: "This is the voice that plays. A family member records it once, in their browser."
-
-### Shot 5: the Ring contract, for real (1:25 to 1:45)
-
-Screen: terminal. Run the replay command from the pre-flight. Show the JSON response.
-
-Say: "Under the hood, that month is a simulated household replayed through the real Ring webhook route. Every event is HMAC-signed, verified with a timing-safe compare, and deduplicated, exactly as a real Ring delivery would be. The label says simulated because it is; the contract is Ring's."
-
-### Shot 6: the morning note, with provenance (1:45 to 2:00)
-
-Screen: terminal. Run the morning-note curl. Point the cursor at "source": "bedrock" and the "model" field.
-
-Say: "The morning note is phrased by Claude on Amazon Bedrock, from facts the engine computed. The model may not add or alter a single fact, and every note says which model wrote it. If every model fails, the deterministic template ships instead: plainer, never wrong."
-
-### Shot 7: the MCP server (2:00 to 2:12)
-
-Screen: terminal. Run:
+## Before you record
 
 ```
-curl -s -D- -o /dev/null -X POST $API/mcp -H "content-type: application/json" \
-  -d '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-11-25","capabilities":{},"clientInfo":{"name":"demo","version":"1"}}}' \
-  | grep -i mcp-session-id
+npm test                              # 125 passing, have this on screen if asked
+npm run demo                          # confirm the replay prints the night story
+node scripts/mcp-conform.mjs          # 19 of 19, live
 ```
 
-Point at the MCP-Session-Id header.
+Open these tabs in this order so you never hunt during a take:
 
-Say: "The same household is an MCP server: spec 2025-11-25 over Streamable HTTP, session issued on initialize. This is the Alexa+ surface."
+1. https://d28hskpupjctiz.cloudfront.net
+2. https://d28hskpupjctiz.cloudfront.net/app/
+3. A terminal in the repo root
+4. https://github.com/usv240/nightlight/blob/main/docs/EVAL.md
 
-### Shot 8: an agent proves the surface (2:12 to 2:35)
+Record at 1920x1080. Turn off notifications. Zoom the browser to 110 percent
+so a judge on a laptop can read it.
 
-Screen: terminal. Run the Week Review agent against the live endpoint. Let the tool list print, then the note.
+---
+
+## 0:00 to 0:20 The problem
+
+**Point at:** the landing page hero, the dark band with the row of nights.
+
+> **"Six in ten people living with dementia will walk out of the house at
+> least once. Every door alarm on the market answers that the same way: it
+> wakes the caregiver."**
+
+**Point at:** the one red mark in the row.
+
+> **"A controlled trial measured whether that helps the caregiver sleep. It
+> does not. And seventy percent of families who move a relative into care
+> say the nights are why."**
+
+Pause half a second before the next line. It is the whole pitch.
+
+> **"Nightlight answers the door before it wakes anybody."**
+
+---
+
+## 0:20 to 0:40 What it is
+
+**Point at:** the thirty marks, then the legend.
+
+> **"One mark is one night, from the Ring doorbell a family already owns.
+> Amber means the door opened and a recorded family voice settled it.
+> Red means the voice was not enough and the caregiver was woken."**
+
+**Point at:** the amber marks specifically.
+
+> **"Twenty-nine nights slept through. That row is the product."**
+
+---
+
+## 0:40 to 1:10 The live pipeline
+
+**Navigate to:** the terminal. Run it on camera, do not pre-run it.
 
 ```
-python apps/agent/week_review.py --url $API/mcp
+npm run demo
 ```
 
-Say: "This is a Strands agent on Bedrock. It has no database access. It reaches the household only through those MCP tools, and it writes the caregiver's week from what the tools return. It also found a bug our own conformance tests had missed, which is the best argument for it."
+**Point at:** the scrolling night-by-night output as it prints.
 
-### Shot 9: nothing fails into silence (2:35 to 2:45)
+> **"This is a month of Ring events replayed through the real intake route,
+> HMAC signed and verified exactly as a live delivery would be. No test
+> hook, no bypass."**
 
-Screen: terminal. Run the resilience curl. Scroll to the voice section so "onTotalFailure" is visible.
+**Point at:** the line where an incident opens at 03:05.
 
-Say: "The voice is a chain: family recording, then Polly synthesis, and if both fail the caregiver is woken immediately, because degrading to silence is the one thing this system must never do."
+> **"Three in the morning. The door opens. That is outside this household's
+> normal pattern, so an incident opens."**
 
-### Shot 10: close (2:45 to 2:55)
+**Point at:** the voice line, then the resolution line.
 
-Screen: back to the landing page, scrolled to the evaluation line and the repo link.
+> **"The recorded voice plays at the chime. The person comes back inside.
+> The incident closes, and nobody was woken."**
 
-Say: "Across 2,936 nights of 34 real homes from the public CASAS corpus, a standard door alarm wakes the caregiver 14,068 times. Nightlight wakes them 774. Open source, MIT, live at the link."
+---
 
-Hold on the URL for two seconds. Cut.
+## 1:10 to 1:35 The caregiver's view
 
-## Do not say
+**Navigate to:** https://d28hskpupjctiz.cloudfront.net/app/
 
-- Anything that implies diagnosis, prediction, or medical advice.
-- "Prevents wandering." It responds to it.
-- Any number not on the landing page or in docs/EVIDENCE.md.
-- "Production ready." Say "live" and "tested."
+**Point at:** the big number.
 
-## After recording
+> **"Here is the caregiver's app, and here is the only number on it.
+> Eighteen nights slept, in a row."**
 
-- Export 1080p, H.264. No music.
-- YouTube: title "Nightlight: the Ring doorbell works the night shift", visibility Public, not Unlisted. Description: one paragraph, then the site URL, the repo URL, and "Simulated household; real Ring webhook contract."
-- Paste the link into docs/SUBMISSION.md under Links, and into the Devpost form.
+> **"Not incidents detected. Not events processed. If the headline were
+> how much the system caught, we would have built a monitor that wakes
+> someone every night, and the trial already showed that does not work."**
+
+**Point at:** the morning note.
+
+> **"The morning note is written by Amazon Bedrock from facts the engine
+> computed. If every model is unavailable it falls to the engine's own
+> sentence, so it degrades in warmth and never in accuracy."**
+
+---
+
+## 1:35 to 1:50 Nothing fails into silence
+
+**Point at:** the info button next to the voice section, open it.
+
+> **"Every explanation on this page is one click away, because a caregiver
+> at three in the morning should not have to go and read documentation."**
+
+> **"And if the voice cannot play at all, the caregiver is woken
+> immediately. Degrading to waking someone is always safe. Degrading to
+> silence never is."**
+
+---
+
+## 1:50 to 2:20 The evidence
+
+**Navigate to:** docs/EVAL.md on GitHub. **Point at:** the headline table.
+
+> **"We measured this on data we did not author. Two thousand nine hundred
+> and thirty-six nights across thirty-four real homes, from a public
+> research corpus. A standard door alarm wakes the caregiver fourteen
+> thousand and sixty-eight times. Nightlight wakes them seven hundred and
+> seventy-four."**
+
+**Point at:** the recall table, directly below.
+
+> **"And here is what that restraint cost, because a reduction on its own
+> means nothing. Waking someone less often is easy if you stop noticing
+> things."**
+
+> **"Of thirty-four labelled night-time exits, Nightlight flagged seven.
+> Twenty-six of the twenty-seven it missed were exits the resident came
+> back from within half an hour."**
+
+That number is not a weakness in the video. Say it plainly and move on. It
+is the line that tells a judge the rest of the numbers are real.
+
+---
+
+## 2:20 to 2:40 Close
+
+**Point at:** the terminal, run this live if you have the seconds:
+
+```
+node scripts/mcp-conform.mjs
+```
+
+> **"The same household is an Alexa+ surface too: a Model Context Protocol
+> server that passes nineteen of nineteen spec checks over real HTTP. The
+> Ring integration is open source on npm as ring-webhook-kit."**
+
+**Point back at:** the night strip.
+
+> **"Six point eight billion hours of unpaid care a year in the United
+> States alone, and the nights are what ends it. Nightlight gives back the
+> one thing nobody can buy more of."**
+
+**Last frame:** the landing page, the row of quiet nights on screen.
+
+> **"Nightlight. The night shift, handled."**
+
+---
+
+## If you are over three minutes
+
+Cut in this order and stop as soon as you are under:
+
+1. The info button beat at 1:35
+2. The MCP conformance run at 2:20, say the sentence over the dashboard
+3. The Bedrock fallback sentence at 1:10
+
+Never cut: the live `npm run demo`, the eighteen-nights number, or the
+recall figure. Those three are tech implementation, design and honesty,
+and each one is a whole criterion.
+
+## Things not to say
+
+Do not say it detects wandering. The corpus contains no wandering and the
+evaluation says so. Do not say it prevents anything, delays anything, or
+replaces supervision. The product is a home safety aid and the video
+should sound like one.
