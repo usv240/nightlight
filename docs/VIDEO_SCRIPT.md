@@ -84,21 +84,41 @@ npm run demo
 > HMAC signed and verified exactly as a live delivery would be. No test
 > hook, no bypass."**
 
-**Point at:** the line where an incident opens at 03:05.
+**Point at:** the line for **2026-09-23**, which reads "One doorway event at
+02:40. The familiar voice message played and activity settled. You were not
+woken."
 
-> **"Three in the morning. The door opens. That is outside this household's
-> normal pattern, so an incident opens."**
+> **"Twenty to three in the morning. The door opens. That is outside this
+> household's normal pattern, so an incident opens, the recorded voice
+> plays at the chime, and the person comes back inside. Nobody was woken."**
 
-**Point at:** the voice line, then the resolution line.
+**Point at:** the line for **2026-09-12**, the only one marked WOKEN, which
+reads "Doorway activity at 03:05 continued and the notification was not
+acknowledged in time."
 
-> **"The recorded voice plays at the chime. The person comes back inside.
-> The incident closes, and nobody was woken."**
+> **"And here is the night it did not work. Five past three, the activity
+> continued, the voice was not enough. So the caregiver was woken, and then
+> the escalation contacts. That is the red mark you saw on the first
+> screen."**
+
+Showing the failure is worth more than hiding it. It is the same night the
+strip already told them about, and it proves the escalation path is real
+rather than described.
+
+**Point at:** the summary block the demo prints last.
+
+> **"Twenty-nine of thirty nights undisturbed. Two settled by the voice.
+> One escalation."**
 
 ---
 
 ## 1:10 to 1:35 The caregiver's view
 
 **Navigate to:** https://d28hskpupjctiz.cloudfront.net/app/
+
+**Point at:** the **Live backend** badge at the top, for one second.
+
+> **"This page is talking to the deployed API right now, not to a fixture."**
 
 **Point at:** the big number.
 
@@ -117,9 +137,22 @@ npm run demo
 
 ---
 
-## 1:35 to 1:50 Nothing fails into silence
+## 1:35 to 1:55 The voice, and what happens when it fails
 
-**Point at:** the info button next to the voice section, open it.
+**Scroll to:** "The voice at the door". **Point at:** the example message.
+**Do not press Record.** In a real browser that raises a microphone
+permission dialog and you will lose the take.
+
+Read the example out loud, slowly. It is the most human line in the
+project and the whole product is built around it.
+
+> **"This is the message a family records. Dad, it is night time. Come back
+> inside. I will see you in the morning."**
+
+> **"That is the thing the system tries before it tries anything else. Not
+> a siren. Not a notification. The voice of someone they know."**
+
+**Click:** the info button beside it, let the explainer open.
 
 > **"Every explanation on this page is one click away, because a caregiver
 > at three in the morning should not have to go and read documentation."**
@@ -130,7 +163,7 @@ npm run demo
 
 ---
 
-## 1:50 to 2:20 The evidence
+## 1:55 to 2:20 The evidence
 
 **Navigate to:** docs/EVAL.md on GitHub. **Point at:** the headline table.
 
@@ -162,6 +195,9 @@ is the line that tells a judge the rest of the numbers are real.
 ```
 node scripts/mcp-conform.mjs
 ```
+
+The output prints `12 of 12 MUST, 7 of 7 SHOULD`. That is the nineteen.
+Know that before you are on camera so you do not hesitate reading it.
 
 > **"The same household is an Alexa+ surface too: a Model Context Protocol
 > server that passes nineteen of nineteen spec checks over real HTTP. The
