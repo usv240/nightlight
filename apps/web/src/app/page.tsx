@@ -534,7 +534,7 @@ curl http://127.0.0.1:8787/api/summary`}
             <ul className="mt-3 space-y-2 text-sm leading-relaxed text-muted">
               <li>Ring track entry, Build Ship Shape: Amazon Developer Hackathon</li>
               <li>AWS Builder and Open Source mini challenges</li>
-              <li>Deterministic, unit-tested detection: 147 tests across engine, webhook intake, simulator, and the HTTP path</li>
+              <li>Deterministic, unit-tested detection: 148 tests across engine, webhook intake, simulator, and the HTTP path</li>
               <li>Every demo runs the production engine; simulated data is always labeled</li>
               <li>A running friction log ships in the repository as feedback to the Ring team</li>
             </ul>

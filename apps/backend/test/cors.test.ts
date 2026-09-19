@@ -56,6 +56,26 @@ describe("CORS is owned by exactly one layer", () => {
     await app.close();
   });
 
+  it("lets a browser read the MCP session id off Lambda, as the function URL does on it", async () => {
+    // A browser hides every response header it is not told it may read,
+    // and an MCP client cannot continue without MCP-Session-Id. The
+    // function URL exposes it in production. This layer used to expose
+    // nothing, so a browser-based MCP client worked deployed and failed in
+    // development. The sibling EveryWord project found it by pressing its
+    // own live MCP panel against a local server; this one had the same
+    // gap and no panel to reveal it.
+    delete process.env.AWS_LAMBDA_FUNCTION_NAME;
+    const { app } = buildServer();
+    const res = await app.inject({
+      method: "GET",
+      url: "/api/summary",
+      headers: { origin: "http://localhost:3000" },
+    });
+    const exposed = String(res.headers["access-control-expose-headers"] ?? "").toLowerCase();
+    expect(exposed).toContain("mcp-session-id");
+    await app.close();
+  });
+
   it("never sends the header more than once in either environment", async () => {
     for (const onLambda of [true, false]) {
       if (onLambda) process.env.AWS_LAMBDA_FUNCTION_NAME = "nightlight-backend";

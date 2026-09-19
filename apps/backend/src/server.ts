@@ -95,7 +95,18 @@ export function buildServer(opts: { store?: NightlightStore } = {}) {
     layer responsible in each environment.
   */
   if (!process.env.AWS_LAMBDA_FUNCTION_NAME) {
-    app.register(cors, { origin: true });
+    // Exposed to match the function URL's own CORS config exactly.
+    //
+    // A browser hides every response header it is not told it may read,
+    // and an MCP client cannot continue without reading MCP-Session-Id.
+    // Production exposes it at the function URL, so this layer and that
+    // one have to agree; before this they did not, and any browser-based
+    // MCP client worked in production and failed in local development
+    // with a session the server had opened and the client could not see.
+    // Bellwether's server had this right from the start. This is the
+    // second CORS fix in a row that one sibling had and the others did
+    // not.
+    app.register(cors, { origin: true, exposedHeaders: ["mcp-session-id"] });
   }
 
   app.post("/webhooks/ring", async (req, reply) => {
