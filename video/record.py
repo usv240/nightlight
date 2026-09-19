@@ -42,7 +42,7 @@ from pathlib import Path
 
 from playwright.sync_api import Page, sync_playwright
 
-from beats import BEATS, Beat, sentence_spans
+from beats import BEATS, Beat, sentence_spans, sentences
 
 SITE = "https://d28hskpupjctiz.cloudfront.net"
 API = "https://qdvxx267lgnsitq242aplz722a0zuien.lambda-url.us-east-1.on.aws"
@@ -87,6 +87,18 @@ DESIGN_W, DESIGN_H = 1920, 1080
 WIDTH, HEIGHT = DESIGN_W * SCALE, DESIGN_H * SCALE
 
 # A pointer the page can actually draw. Installed on DOMContentLoaded.
+#
+# Appended to the document element, not to body, and that is not a detail.
+# Body carries the 2x zoom that makes the 4K recording match the 1920
+# layout, and zoom scales the coordinates of fixed-position descendants
+# too. Inside body, a ring told to sit at the mouse's 1920,1475 rendered
+# at 3788,2898: roughly double, and past the bottom of a 2160 frame.
+#
+# So every 4K take drew the cursor in the wrong place, and near the foot
+# of the page drew it outside the frame entirely. Nothing caught it
+# because the ring existed, carried the right inline coordinates, and was
+# simply rendered somewhere else. framecheck.py now compares where the
+# ring lands with where the mouse is.
 CURSOR_JS = ("""
 (() => {
   if (window.__nlCursor) return;
@@ -100,7 +112,7 @@ CURSOR_JS = ("""
     'box-shadow:0 0 0 1px rgba(0,0,0,0.25)',
     'transition:transform 90ms ease-out', 'left:-100px', 'top:-100px',
   ].join(';');
-  document.body.appendChild(ring);
+  document.documentElement.appendChild(ring);
   addEventListener('mousemove', (e) => {
     ring.style.left = e.clientX + 'px';
     ring.style.top = e.clientY + 'px';
@@ -112,7 +124,7 @@ CURSOR_JS = ("""
       .replace('left:-100px', 'left:' + ring.style.left)
       .replace('top:-100px', 'top:' + ring.style.top)
       + ';transition:transform 420ms ease-out,opacity 420ms ease-out';
-    document.body.appendChild(pulse);
+    document.documentElement.appendChild(pulse);
     requestAnimationFrame(() => {
       pulse.style.transform = 'scale(2.6)';
       pulse.style.opacity = '0';
@@ -262,6 +274,32 @@ class Recorder:
     def line_seconds(self) -> float:
         assert self._beat is not None
         return self.narration.get(self._beat.key, self._beat.speak_seconds)
+
+    def on_phrase(self, phrase: str) -> None:
+        """Hold until the sentence containing `phrase` starts being spoken.
+
+        `on_sentence(n)` was the first version and it is brittle in the one
+        way that matters: the cue is a position, so rewording a line
+        silently re-aims the cursor. Cutting four words from the opening of
+        the night-strip beat moved every cue after it by one, and the
+        pointer would have described the red mark while the narration said
+        amber, which is the exact bug this timing exists to prevent.
+
+        A phrase is what the shot is actually about, so it survives
+        editing. If it stops appearing, that is a real change to the script
+        and it fails loudly here rather than drifting on camera.
+        """
+        assert self._beat is not None
+        sentences_ = sentences(self._beat.say)
+        want = phrase.lower()
+        for i, sentence in enumerate(sentences_):
+            if want in sentence.lower():
+                self.on_sentence(i)
+                return
+        raise SystemExit(
+            f"beat {self._beat.key}: no sentence contains {phrase!r}. "
+            f"The line is now: {self._beat.say}"
+        )
 
     def on_sentence(self, n: int) -> None:
         """Hold until sentence `n` of the current line starts being spoken.
@@ -520,15 +558,15 @@ def act_landing_strip(r: Recorder):
     """
     r.point_at(".night-mark[data-kind='voice']")
     yield
-    r.on_sentence(2)                              # "Amber means..."
+    r.on_phrase("Amber means")
     r.point_at(".night-mark--legend", nth=1)
     r.hold(0.9)
     r.point_at(".night-mark[data-kind='voice']")
-    r.on_sentence(3)                              # "Red means it did not..."
+    r.on_phrase("Red means")
     r.point_at(".night-mark--legend", nth=2)
     r.hold(0.9)
     r.point_at(".night-mark[data-kind='woken']")
-    r.on_sentence(4)                              # "Twenty-nine of thirty..."
+    r.on_phrase("Twenty-nine of thirty")
     r.point_at(".night-mark--legend", nth=0)
 
 
@@ -553,7 +591,7 @@ def act_app_open(r: Recorder):
     # "Twenty to three in the morning, the door opened outside this
     # household's pattern." The row that says so, while it is being said,
     # rather than a cursor parked in a corner and a judge left to hunt.
-    r.on_sentence(1)
+    r.on_phrase("Twenty to three")
     r.point_at("li:has-text('02:40')")
 
 
@@ -595,11 +633,12 @@ def act_app_streak(r: Recorder):
     r.point_at("text=in a row, and counting")
     yield
     # The 18 and the 29 are the pair a reviewer flagged as confusing, so
-    # the cursor visits each as its own half of the sentence is spoken.
-    r.on_sentence(1)
-    r.point_at("text=in a row, and counting")
-    r.hold(2.2)
-    r.point_at("text=undisturbed in total")
+    # the cursor visits each as its own half of the line is spoken. Both
+    # numbers now live in the first sentence, so this is a hold rather than
+    # a cue: waiting for sentence one would point at them after they had
+    # both been said.
+    r.hold(2.4)                      # "Eighteen nights slept in a row,"
+    r.point_at("text=undisturbed in total")   # "and twenty-nine of the last thirty."
 
 
 # The send button by its text, not by `#ring button`. The heading holds an
@@ -663,11 +702,11 @@ def act_ring_proof(r: Recorder):
     # 230 the third row's bottom edge landed five pixels above the caption
     # band, which is not a margin, it is luck.
     r.scroll_to("#ring ol", offset=200)
-    r.on_sentence(2)                 # "A real doorbell event at three in the morning, accepted."
+    r.on_phrase("accepted")
     r.point_at("#ring ol > li", nth=0)
-    r.on_sentence(3)                 # "Tampered in transit, rejected."
+    r.on_phrase("rejected")
     r.point_at("#ring ol > li", nth=1)
-    r.on_sentence(4)                 # "Ring retrying the first, ignored."
+    r.on_phrase("ignored")
     r.point_at("#ring ol > li", nth=2)
 
 
@@ -687,11 +726,11 @@ def act_ring_connect(r: Recorder):
     r.scroll_to("#ring-connect h3", offset=110)
     r.hold(0.3)
     yield
-    r.on_sentence(1)                 # "Three of these four steps are live right now."
+    r.on_phrase("steps are live")
     r.point_at(STEP_BADGE, nth=1)
     r.hold(1.1)
     r.point_at(STEP_BADGE, nth=3)
-    r.on_sentence(2)                 # "The fourth is Ring's certification."
+    r.on_phrase("certification")
     r.point_at(STEP_BADGE, nth=0)
 
 
@@ -711,9 +750,9 @@ def act_evidence(r: Recorder):
     r.scroll_to("#proof h2", offset=206)
     r.hold(0.5)
     yield
-    r.on_sentence(1)          # "A standard alarm would have woken..."
+    r.on_phrase("standard alarm")
     r.point_at("#proof div.grid > div", nth=0)
-    r.on_sentence(2)          # "Nightlight woke them seven hundred..."
+    r.on_phrase("seven hundred")
     r.point_at("#proof div.grid > div", nth=1)
 
 
@@ -774,7 +813,9 @@ def act_page_depth(r: Recorder):
     # is what caught that, and now asserts the line stays off frame.
     r.scroll_to("text=Nightlight never stores", offset=500)
     r.point_at("text=Nightlight never stores")
-    r.on_sentence(2)                 # "The Ring API offers none..."
+    # Cue 1, not 2: the privacy rule is now one sentence rather than a
+    # heading sentence followed by the list it introduces.
+    r.on_phrase("never stores")
     r.point_at("text=Facial or identity data")
 
 

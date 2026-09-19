@@ -94,6 +94,40 @@ def main() -> int:
         page.wait_for_timeout(700)
         print(f"{R.WIDTH}x{R.HEIGHT}, captions from y={CAPTION_TOP}, against {R.SITE}\n")
 
+        # Does the drawn cursor actually land where the mouse is?
+        #
+        # It did not, for three 4K takes. The ring lives in a fixed-position
+        # element, body carries the 2x zoom, and zoom scales fixed
+        # coordinates too, so the ring sat at roughly double the mouse
+        # position and near the foot of a page fell outside the frame. The
+        # element existed and held the right inline coordinates the whole
+        # time, which is why every other check passed.
+        for probe in ((900, 700), (2600, 1500)):
+            page.mouse.move(*probe, steps=4)
+            page.wait_for_timeout(140)
+            centre = page.evaluate(
+                """() => {
+                     const ring = [...document.documentElement.children]
+                       .find(d => d.style && d.style.borderRadius === '50%');
+                     if (!ring) return null;
+                     const r = ring.getBoundingClientRect();
+                     return [Math.round(r.x + r.width / 2), Math.round(r.y + r.height / 2)];
+                   }"""
+            )
+            if centre is None:
+                problems.append("the drawn cursor is missing from the page")
+                print("       FAIL the cursor ring does not exist")
+                break
+            off = max(abs(centre[0] - probe[0]), abs(centre[1] - probe[1]))
+            ok = off <= 4
+            if not ok:
+                problems.append(
+                    f"the drawn cursor renders at {tuple(centre)} while the mouse "
+                    f"is at {probe}, {off}px away"
+                )
+            print(f"       {'ok  ' if ok else 'FAIL'} cursor follows the mouse   "
+                  f"mouse {probe} ring {tuple(centre)}")
+
         r = R.Recorder(page, time.monotonic(), narration)
         for beat in BEATS:
             steps = R.ACTIONS[beat.action](r)

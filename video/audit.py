@@ -93,8 +93,14 @@ def main() -> int:
         ("29 and 18 are reconciled out loud",
          "eighteen nights" in say.lower() and "twenty-nine" in say.lower(),
          "streak beat"),
-        ("the pipeline is claimed as real",
-         "signed ring webhook" in say.lower(), "night beat"),
+        # Matched on the two ideas rather than one long phrase. The first
+        # version wanted the exact words "signed ring webhook", and a
+        # rewrite for clarity dropped one of them while saying the same
+        # thing. A check that brittle reports a problem that is not there,
+        # which is how a real one gets ignored.
+        ("the signed pipeline is claimed",
+         "ring partner api" in say.lower() and "signed webhooks" in say.lower(),
+         "ring beat"),
         # What the camera is pointed at.
         ("the escalated night is on screen",
          "escalate" in keys and "ESCALATED" in src["record"],
@@ -109,7 +115,7 @@ def main() -> int:
         # Potential impact: the question a family asks before any other.
         ("how a household connects is shown",
          "connect" in keys and "#ring-steps" in src["record"]
-         and "connects their own doorbell" in say,
+         and "connects their own" in say,
          "connect beat walks the four steps"),
         # Design and Quality of the Idea: the refusals, which are the
         # strongest thing on the page for a product that lives in a home.

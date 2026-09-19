@@ -117,10 +117,10 @@ BEATS: list[Beat] = [
         pause_before=0.5,
         min_hold=15.0,
         say=(
-            "A month of nights. Every mark is one. Amber: the "
-            "voice settled it, nobody woken. Red: it did not, and the "
-            "caregiver was woken. Twenty-nine of thirty nights slept "
-            "through."
+            "Every mark here is one night. "
+            "Amber means the voice settled it and nobody woke. Red means "
+            "it did not, and the caregiver was woken. Twenty-nine of "
+            "thirty nights slept through."
         ),
         note=(
             "The visual argument. Held long enough to rest on each legend "
@@ -132,10 +132,10 @@ BEATS: list[Beat] = [
         action="app_open",
         pause_before=0.6,
         say=(
-            "Here is one of those nights. "
-            "Twenty to three in the morning, the door opened outside this "
-            "household's pattern. The voice played, the person came back "
-            "inside, nobody woken."
+            "Here is one of those nights. Twenty to three in the morning, "
+            "the front door opened, at an hour this household never opens "
+            "it. The voice played, the person came back inside, and nobody "
+            "was woken."
         ),
         note=(
             "The story of a single night, in the order a family lives it. "
@@ -174,9 +174,9 @@ BEATS: list[Beat] = [
         action="app_streak",
         pause_before=0.5,
         say=(
-            "Eighteen nights slept "
-            "in a row, twenty-nine of the last thirty in total. Not "
-            "incidents detected. Nights nobody was woken."
+            "Eighteen nights slept in a row, and twenty-nine of the last "
+            "thirty. That is not a count of what it caught. It is a count "
+            "of the nights nobody was woken."
         ),
         note=(
             "Both numbers on one screen, because meeting 29 and 18 on two "
@@ -188,9 +188,10 @@ BEATS: list[Beat] = [
         action="ring_proof",
         pause_before=0.5,
         say=(
-            "This is the Ring Partner API. Three signed Ring webhooks. A real "
-            "3am doorway event, accepted. Tampered in transit, rejected. A "
-            "retry, ignored. The voice never plays twice."
+            "This is the Ring Partner API. Three signed webhooks. A real "
+            "doorbell event at three in the morning: accepted. The same "
+            "event, one byte changed on the way: rejected. Ring sending it "
+            "twice: ignored, so the voice never plays twice."
         ),
         note=(
             "The rules require the video to show the project working through "
@@ -204,9 +205,8 @@ BEATS: list[Beat] = [
         action="ring_connect",
         pause_before=0.5,
         say=(
-            "And this is how a family connects their own doorbell. Three of "
-            "these four steps are live right now. The fourth is Ring's "
-            "certification."
+            "And this is how a family connects their own. Three of these "
+            "four steps are live. The fourth is Ring's certification."
         ),
         note=(
             "The question a family asks before any of the others: how do I "
@@ -220,9 +220,10 @@ BEATS: list[Beat] = [
         action="evidence",
         pause_before=0.6,
         say=(
-            "Thirty-four real homes we did not collect. A "
-            "standard alarm would have woken the caregiver fourteen thousand "
-            "times. Nightlight woke them seven hundred and seventy-four."
+            "Thirty-four real homes, recorded by researchers, not by us. A "
+            "standard alarm would have woken the caregiver fourteen "
+            "thousand times. Nightlight woke them seven hundred and "
+            "seventy-four."
         ),
         note="Numbers from data we did not author, shown on the page.",
     ),
@@ -231,9 +232,10 @@ BEATS: list[Beat] = [
         action="evidence_cost",
         pause_before=0.4,
         say=(
-            "And what that cost. Of thirty-four labelled "
-            "night exits it flagged seven, and twenty-six of the twenty-"
-            "seven it missed, the resident came back within half an hour."
+            "And what that cost. There were thirty-four real "
+            "night-time exits. Nightlight flagged seven. Of the "
+            "twenty-seven it let pass, twenty-six came home within half an "
+            "hour."
         ),
         note=(
             "The uncomfortable number. It is what makes the others "
@@ -245,10 +247,9 @@ BEATS: list[Beat] = [
         action="page_depth",
         pause_before=0.5,
         say=(
-            "Every claim here has its reasoning under it: the research, the "
-            "ladder, the browser demo. Nightlight "
-            "never stores video, audio, location, or identity data. The "
-            "Ring API offers none, and we want none."
+            "Every claim here has its reasoning under it. And one rule "
+            "under all of them: Nightlight never stores video, audio, or "
+            "anything that could identify a person."
         ),
         note=(
             "The page is deeper than the six shots before this, and a judge "
