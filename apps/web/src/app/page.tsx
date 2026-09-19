@@ -1,3 +1,5 @@
+import { RingConnect } from "../components/RingConnect";
+import { RingDeliveryProof } from "../components/RingDeliveryProof";
 import Link from "next/link";
 import { Nav } from "../components/Nav";
 import { NightStrip } from "../components/NightStrip";
@@ -411,6 +413,26 @@ export default function Home() {
           <div className="mt-10">
             <NightDemo />
           </div>
+        </div>
+      </section>
+
+      {/* The Ring integration, shown rather than claimed */}
+      <section id="ring" className="mx-auto max-w-[1120px] px-4 py-20 sm:px-6">
+        <h2 className="text-3xl font-semibold tracking-tight sm:text-4xl">
+          Built on Ring, and you can check that from here.
+        </h2>
+        <p className="mt-4 max-w-[760px] leading-relaxed text-muted">
+          Nightlight runs on the Ring Partner API: OAuth against
+          oauth.ring.com, devices and event history from api.amazonvision.com,
+          and verified webhook intake for everything that happens at the door.
+          The webhook is the part a family is really trusting, so it is the
+          part you can press.
+        </p>
+        <div className="mt-10">
+          <RingDeliveryProof />
+        </div>
+        <div className="mt-6">
+          <RingConnect />
         </div>
       </section>
 

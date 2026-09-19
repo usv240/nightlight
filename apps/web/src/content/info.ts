@@ -14,6 +14,16 @@ export interface InfoEntry {
 }
 
 export const INFO: Record<string, InfoEntry> = {
+  "ring-delivery": {
+    id: "ring-delivery",
+    term: "Signed Ring webhook",
+    plain:
+      "Ring tells Nightlight about a doorway event by sending it a message over the internet. Anyone can send a message to an address on the internet, so every one of Ring's carries a signature that proves it came from Ring and was not altered on the way. Nightlight checks that signature before it will act on anything.",
+    technical:
+      "HMAC SHA-256 over the raw request body, sent in the X-Signature header and compared with a timing-safe equality check before the JSON is parsed. Request ids are deduplicated with a TTL bound, because Ring retries a delivery it did not see acknowledged and a 3am doorway event processed twice would play the voice prompt twice.",
+    sourceUrl: "https://www.npmjs.com/package/ring-webhook-kit",
+    sourceLabel: "ring-webhook-kit on npm (MIT)",
+  },
   "night-strip": {
     id: "night-strip",
     term: "What this row shows",

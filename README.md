@@ -82,6 +82,28 @@ It has already earned its place. Its first run flagged an 86.6 percent figure qu
 
 ## The Ring API, called for real
 
+You do not have to take the webhook integration on trust. The **Ring**
+section of the live site performs three real signed deliveries to the
+deployed `/webhooks/ring` endpoint when you press it, and prints what the
+production route did with each: a genuine 3am doorbell event accepted, the
+same bytes with one byte changed in transit rejected with a 401, and a
+byte-identical redelivery ignored as a duplicate. The signature is computed
+by the published `ring-webhook-kit`, the deliveries go over a real socket,
+and they land in a sandbox household so pressing the button cannot move the
+published month. Route: `POST /api/ring/simulate`; pinned by
+`apps/backend/test/ring-simulate.test.ts`, including a test that the
+published household is untouched.
+
+The same section sets out how a household connects its own doorbell: the
+four real steps, with the three that are deployed endpoints marked apart
+from the one that waits on Ring certification, because account linking
+begins in the Ring Appstore. The security step is checkable too.
+`POST /api/ring/link-check` runs the production nonce validator over three
+link requests and shows a genuine one allowed, the same nonce claimed for
+a different account refused, and a correctly signed request replayed
+outside Ring's ten minute window refused. Pinned by
+`apps/backend/test/ring-link-check.test.ts`.
+
 `docs/RING_LIVE.md`: three of three read endpoints answered against `api.amazonvision.com` on 17 September 2026, captured with a Playground token and redacted before writing. Reproduce with `RING_ACCESS_TOKEN="<token>" npx tsx apps/backend/scripts/ring-evidence.mts`.
 
 ## Verify the live MCP server yourself

@@ -9,11 +9,15 @@ import { registerMcp } from "./mcp";
 import { MemoryStore, type NightlightStore } from "./store";
 import { MODEL_LADDER, phraseMorningNote } from "./summaries";
 import { RingClient, validateLinkNonce, type RingTokens } from "./ring";
+import { simulateRingDeliveries } from "./ring-simulate";
+import { checkRingAccountLink } from "./ring-link-check";
 
 /**
  * Nightlight backend service.
  *
  * POST /webhooks/ring        verified Ring webhook intake (HMAC + dedupe)
+ * POST /api/ring/simulate    three real signed Ring deliveries, sandboxed
+ * POST /api/ring/link-check  the account-link nonce handshake, checked
  * POST /api/demo/replay      replay the simulated month through the real intake path
  * GET  /api/summary          nights, streak, incidents overview
  * GET  /api/incidents        incident detail
@@ -364,6 +368,58 @@ export function buildServer(opts: { store?: NightlightStore } = {}) {
   app.get("/api/ring/devices", async (_req, reply) => {
     if (!ring) return reply.code(503).send({ error: "Ring credentials not configured" });
     return reply.send(await ring.listDevices());
+  });
+
+  /*
+    The Ring delivery proof, for the demo video and for anyone reading the
+    site who does not take a claim on trust.
+
+    The rules require the video to show the project working through a Ring
+    simulator or device. Everything underneath was already real, and none
+    of it was visible: a viewer saw a caregiver app and heard a sentence
+    about signed webhooks. This makes the sentence watchable.
+
+    See ring-simulate.ts for what is real here and what is sandboxed. The
+    short version is that only the household is fake, deliberately, so
+    pressing this button cannot move the published month.
+  */
+  app.post("/api/ring/simulate", async (_req, reply) => {
+    try {
+      // 03:07 on the morning after the demo month ends, so it is a genuine
+      // night-time doorway against a baseline that has already been learnt
+      // rather than an event the engine has no opinion about.
+      const snap = await runtime.snapshot();
+      const lastNight = snap.nights[snap.nights.length - 1]?.nightOf;
+      const day = lastNight
+        ? new Date(`${lastNight}T00:00:00Z`)
+        : new Date();
+      day.setUTCDate(day.getUTCDate() + 1);
+      const nightAt = `${day.toISOString().slice(0, 10)}T07:07:00.000Z`;
+      return reply.send(
+        await simulateRingDeliveries((opts) => buildServer(opts), DEMO_SECRET, nightAt),
+      );
+    } catch (err) {
+      // A failed proof must read as a failed proof, never as a success
+      // with an empty table.
+      return reply.code(500).send({ error: (err as Error).message });
+    }
+  });
+
+  /*
+    The account-link handshake, shown working.
+
+    The webhook proof answers "is Ring really underneath this". It does
+    not answer "how does a family connect their own doorbell", and that
+    flow was built, registered and invisible. See ring-link-check.ts for
+    what is real here: the validator is the production one, the key is the
+    demo key, and the page says so.
+  */
+  app.post("/api/ring/link-check", async (_req, reply) => {
+    try {
+      return reply.send(checkRingAccountLink(DEMO_SECRET));
+    } catch (err) {
+      return reply.code(500).send({ error: (err as Error).message });
+    }
   });
 
   registerMcp(app, runtime);
