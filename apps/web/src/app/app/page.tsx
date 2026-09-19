@@ -12,6 +12,7 @@ import {
 import { generateDemoMonth } from "@nightlight/simulator";
 import { ThemeToggle } from "../../components/ThemeToggle";
 import { InfoButton } from "../../components/InfoButton";
+import { openedLocal } from "../../lib/time";
 
 /**
  * The caregiver app.
@@ -49,6 +50,12 @@ interface AppData {
   streak: number;
   live: boolean;
   nightWindow: { start: string; end: string };
+  /*
+    The household's own timezone, carried so that every time on this page
+    is the time the family lived. See `openedLocal` in src/lib/time.ts for
+    what was wrong before it was here.
+  */
+  timezone: string;
   note: MorningNote | null;
 }
 
@@ -68,6 +75,7 @@ function localFallback(): AppData {
     streak: undisturbedStreak(nights),
     live: false,
     nightWindow: demo.config.nightWindow,
+    timezone: demo.config.timezone,
     note: null,
   };
 }
@@ -85,7 +93,11 @@ async function loadLive(): Promise<AppData | null> {
     const [incidents, settings, note] = await Promise.all([
       fetch(`${BACKEND}/api/incidents`).then((r) => r.json() as Promise<Incident[]>),
       fetch(`${BACKEND}/api/settings`).then(
-        (r) => r.json() as Promise<{ nightWindow: { start: string; end: string } }>,
+        (r) =>
+          r.json() as Promise<{
+            nightWindow: { start: string; end: string };
+            timezone: string;
+          }>,
       ),
       fetch(`${BACKEND}/api/morning-note`)
         .then((r) => r.json() as Promise<MorningNote & { available: boolean }>)
@@ -98,6 +110,7 @@ async function loadLive(): Promise<AppData | null> {
       streak: summary.undisturbedStreak,
       live: true,
       nightWindow: settings.nightWindow,
+      timezone: settings.timezone,
       note: note?.available ? note : null,
     };
   } catch {
@@ -491,7 +504,7 @@ export default function CaregiverApp() {
                     </span>
                   </div>
                   <p className="mt-2 text-sm text-muted">
-                    Opened {new Date(inc.openedAt).toUTCString()} ·{" "}
+                    Opened {openedLocal(inc.openedAt, data.timezone)} ·{" "}
                     {inc.eventTimestamps.length} event
                     {inc.eventTimestamps.length === 1 ? "" : "s"} · score{" "}
                     {inc.score.toFixed(2)}

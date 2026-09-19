@@ -17,6 +17,7 @@ export default defineConfig({
   test: {
     include: [
       "apps/backend/test/**/*.test.ts",
+      "apps/web/test/**/*.test.ts",
       "apps/eval/test/**/*.test.ts",
       "packages/**/test/**/*.test.ts",
     ],
