@@ -151,7 +151,7 @@ def main() -> int:
     proc = subprocess.run(
         ["ffmpeg", "-y", "-i", "nightlight-demo.mp4",
          "-vf", f"subtitles=subs.srt:force_style='{style}'",
-         "-c:v", "libx264", "-crf", "18", "-preset", "slow",
+         "-c:v", "libx264", "-crf", "19", "-preset", "medium",
          "-tune", "stillimage",
          "-pix_fmt", "yuv420p", "-c:a", "copy", burned.name],
         cwd=OUT, capture_output=True, text=True,

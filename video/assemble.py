@@ -150,8 +150,8 @@ def cut_video(src: Path, segments: list[tuple[float, float]], dest: Path,
         # quality than the thing it was cut from is a generation lost for
         # nothing, and this file is cut into a dozen of them.
         run(["ffmpeg", "-y", "-ss", f"{a:.3f}", "-t", f"{b - a:.3f}",
-             "-i", str(src), "-c:v", "libx264", "-crf", "16",
-             "-preset", "slow", "-tune", "stillimage",
+             "-i", str(src), "-c:v", "libx264", "-crf", "18",
+             "-preset", "medium", "-tune", "stillimage",
              "-pix_fmt", "yuv420p", "-an", str(piece)])
         pieces.append(piece)
     listing = workdir / "segments.txt"
@@ -162,10 +162,29 @@ def cut_video(src: Path, segments: list[tuple[float, float]], dest: Path,
 
 
 def main() -> int:
+    # Refuse to pair a recording with narration it does not belong to.
+    #
+    # The keys have to match, and the video has to be at least as new as
+    # the audio. A take that crashed once left a stale screen.mp4 behind
+    # and this step happily cut the new script over the old pictures.
+    screen, manifest = OUT / "screen.mp4", OUT / "narration.json"
+    if not screen.exists():
+        raise SystemExit("no screen.mp4: run record.py first")
+    if screen.stat().st_mtime < manifest.stat().st_mtime:
+        raise SystemExit(
+            "screen.mp4 is older than narration.json, so the recording does "
+            "not match the script it would be cut against. Re-run record.py."
+        )
+
     timings = json.loads((OUT / "timings.json").read_text(encoding="utf8"))
     narr = {n["key"]: n["seconds"]
             for n in json.loads((OUT / "narration.json").read_text(encoding="utf8"))}
     starts = {b["key"]: b["at"] for b in timings["beats"]}
+    if set(starts) != set(narr):
+        raise SystemExit(
+            f"recorded beats {sorted(set(starts) ^ set(narr))} do not match "
+            "the narration. Re-run record.py."
+        )
     total = timings["video"]
     work = OUT / "work"
     work.mkdir(exist_ok=True)

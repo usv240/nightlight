@@ -117,7 +117,7 @@ BEATS: list[Beat] = [
         pause_before=0.5,
         min_hold=15.0,
         say=(
-            "A month in one household. Every mark is a night. Amber: the "
+            "A month of nights. Every mark is one. Amber: the "
             "voice settled it, nobody woken. Red: it did not, and the "
             "caregiver was woken. Twenty-nine of thirty nights slept "
             "through."
@@ -189,8 +189,8 @@ BEATS: list[Beat] = [
         pause_before=0.5,
         say=(
             "This is the Ring Partner API. Three signed Ring webhooks. A real "
-            "3am doorway event, accepted. Tampered in transit, rejected. Ring "
-            "retrying the first, ignored. The voice never plays twice."
+            "3am doorway event, accepted. Tampered in transit, rejected. A "
+            "retry, ignored. The voice never plays twice."
         ),
         note=(
             "The rules require the video to show the project working through "
@@ -245,17 +245,19 @@ BEATS: list[Beat] = [
         action="page_depth",
         pause_before=0.5,
         say=(
-            "Every claim here has its reasoning. Nightlight never stores "
-            "video, audio, location, or identity data. The Ring API offers "
-            "none, and we want none."
+            "Every claim here has its reasoning under it: the research, the "
+            "ladder, the browser demo. Nightlight "
+            "never stores video, audio, location, or identity data. The "
+            "Ring API offers none, and we want none."
         ),
         note=(
             "The page is deeper than the six shots before this, and a judge "
-            "who never scrolls will not know. This travels through the "
-            "research, the ladder and the browser demo, then rests on the "
-            "list of things the product refuses to hold, which is the "
-            "strongest thing on the page for a product that lives in "
-            "somebody's home."
+            "who never scrolls will not know. The first sentence names what "
+            "the camera is travelling past, which is the fix for an earlier "
+            "cut where the words described the privacy list while the "
+            "screen was still three sections above it. It rests on the "
+            "things the product refuses to hold, the strongest thing on the "
+            "page for something that lives in somebody's home."
         ),
     ),
     Beat(

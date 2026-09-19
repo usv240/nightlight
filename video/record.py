@@ -47,7 +47,27 @@ from beats import BEATS, Beat, sentence_spans
 SITE = "https://d28hskpupjctiz.cloudfront.net"
 API = "https://qdvxx267lgnsitq242aplz722a0zuien.lambda-url.us-east-1.on.aws"
 OUT = Path(__file__).parent / "build"
-# The recording is 1920x1080 and the capture size must equal the viewport.
+# The recording is 4K, and the capture size must equal the viewport.
+#
+# Playwright's recorder captures at the CSS viewport size, not at the
+# compositor surface, which is why `device_scale_factor` alone cannot
+# produce a larger file: asking for 3840 with a 1920 viewport returns
+# 1920x1080 of product in the corner of a 3840x2160 frame with grey over
+# the rest. Measured, twice.
+#
+# So the viewport really is 3840x2160, and the page is zoomed 2x so the
+# layout is the one designed for 1920. Same composition, same type size
+# relative to the frame, four times the pixels. Every number below that
+# describes a position is therefore in design pixels and multiplied by
+# SCALE where it is used, so the shot list stays readable.
+#
+# The zoom goes on `body`. The page's media queries still see 3840 and
+# stay on the desktop layout, which is what is wanted; Tailwind's largest
+# breakpoint is far below both widths, so nothing changes.
+SCALE = 2
+DESIGN_W, DESIGN_H = 1920, 1080
+
+# The old note, kept because the trap is easy to fall back into:
 #
 # Asking for 2560x1440 does not render more page. Playwright fits the
 # viewport into the requested canvas and pads the remainder, so the take
@@ -64,18 +84,18 @@ OUT = Path(__file__).parent / "build"
 # page at once and makes every word smaller relative to the frame. For a
 # judge watching in a browser window that is a worse video, not a better
 # one.
-WIDTH, HEIGHT = 1920, 1080
+WIDTH, HEIGHT = DESIGN_W * SCALE, DESIGN_H * SCALE
 
 # A pointer the page can actually draw. Installed on DOMContentLoaded.
-CURSOR_JS = """
+CURSOR_JS = ("""
 (() => {
   if (window.__nlCursor) return;
   window.__nlCursor = true;
   const ring = document.createElement('div');
   ring.style.cssText = [
     'position:fixed', 'z-index:2147483647', 'pointer-events:none',
-    'width:26px', 'height:26px', 'margin:-13px 0 0 -13px',
-    'border:2px solid rgba(232,163,61,0.95)', 'border-radius:50%',
+    'width:' + (26*__SCALE__) + 'px', 'height:' + (26*__SCALE__) + 'px', 'margin:' + (-13*__SCALE__) + 'px 0 0 ' + (-13*__SCALE__) + 'px',
+    'border:' + (2*__SCALE__) + 'px solid rgba(232,163,61,0.95)', 'border-radius:50%',
     'background:rgba(232,163,61,0.16)',
     'box-shadow:0 0 0 1px rgba(0,0,0,0.25)',
     'transition:transform 90ms ease-out', 'left:-100px', 'top:-100px',
@@ -101,7 +121,7 @@ CURSOR_JS = """
   }, true);
   addEventListener('mouseup', () => { ring.style.transform = 'scale(1)'; }, true);
 })();
-"""
+""".replace("__SCALE__", str(SCALE)))
 
 # The address of the thing being recorded, on screen the whole time.
 #
@@ -117,12 +137,12 @@ CURSOR_JS = """
 # display an address the page is not actually at. Nothing else is drawn:
 # no fake tabs, no back button, nothing implying an interaction that is
 # not happening.
-URL_BAR_HEIGHT = 56
-URL_BAR_JS = r"""
+URL_BAR_HEIGHT = 56 * SCALE
+URL_BAR_JS = (r"""
 (() => {
   if (window.__nlUrlBar) return;
   window.__nlUrlBar = true;
-  const H = 56;
+  const H = 56 * __SCALE__;
 
   // The page's own sticky headers pin themselves to the viewport top,
   // which is now behind this bar, so they are pushed down by its height.
@@ -136,23 +156,23 @@ URL_BAR_JS = r"""
   bar.style.cssText = [
     'position:fixed', 'top:0', 'left:0', 'right:0', 'height:' + H + 'px',
     'z-index:2147483646', 'pointer-events:none',
-    'display:flex', 'align-items:center', 'padding:0 18px',
+    'display:flex', 'align-items:center', 'padding:0 ' + (18 * __SCALE__) + 'px',
     'background:#1f2430', 'border-bottom:1px solid rgba(255,255,255,0.10)',
     'box-shadow:0 2px 10px rgba(0,0,0,0.20)',
   ].join(';');
 
   const omnibox = document.createElement('div');
   omnibox.style.cssText = [
-    'display:flex', 'align-items:center', 'gap:11px', 'flex:1',
-    'height:36px', 'padding:0 18px', 'border-radius:999px',
+    'display:flex', 'align-items:center', 'gap:' + (11 * __SCALE__) + 'px', 'flex:1',
+    'height:' + (36 * __SCALE__) + 'px', 'padding:0 ' + (18 * __SCALE__) + 'px', 'border-radius:999px',
     'background:#2b313f', 'border:1px solid rgba(255,255,255,0.10)',
-    'font:500 19px/1 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace',
+    'font:500 ' + (19 * __SCALE__) + 'px/1 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace',
     'color:#f2f4f8', 'letter-spacing:0.2px',
   ].join(';');
 
   const lock = document.createElement('span');
   lock.textContent = '\u{1F512}';
-  lock.style.cssText = 'font-size:16px;line-height:1;opacity:0.9';
+  lock.style.cssText = 'font-size:' + (16 * __SCALE__) + 'px;line-height:1;opacity:0.9';
 
   const text = document.createElement('span');
   const paint = () => {
@@ -167,7 +187,7 @@ URL_BAR_JS = r"""
   bar.appendChild(omnibox);
   document.documentElement.appendChild(bar);
 })();
-"""
+""".replace("__SCALE__", str(SCALE)))
 
 # The site sets `scroll-behavior: smooth`, which fights the easing below.
 #
@@ -181,6 +201,14 @@ URL_BAR_JS = r"""
 # Turning it off here rather than using Playwright's reduced-motion flag,
 # which would also disable the page's own entrance animations. Those are
 # part of what the product looks like and belong in the recording.
+# The page is laid out for 1920 and the viewport is 3840, so it is zoomed
+# to match. On `body` rather than on `documentElement`, because the
+# address bar below is appended to the document element and must scale by
+# its own multiplier instead of inheriting this one.
+ZOOM_JS = f"""
+(() => {{ document.body.style.zoom = "{SCALE}"; }})();
+"""
+
 NATIVE_SCROLL_OFF_JS = """
 (() => {
   const style = document.createElement('style');
@@ -267,6 +295,11 @@ class Recorder:
     def scroll_to(self, selector: str, offset: int = 176) -> None:
         """Put an element's top below the address bar and sticky header.
 
+        `offset` is in design pixels, the 1920-wide coordinates the site
+        was built in, and is scaled here. Every position in the shot list
+        is written that way so the frame size can change without a sweep
+        through the actions.
+
         Centring a tall panel leaves half of it off screen, which is how a
         tab strip ends up perfectly placed and the content under it
         invisible.
@@ -289,14 +322,14 @@ class Recorder:
         # afterwards is cheaper than discovering it in a frame.
         for attempt in range(3):
             top = loc.evaluate("el => window.scrollY + el.getBoundingClientRect().top")
-            target = max(0, top - offset)
+            target = max(0, top - offset * SCALE)
             # 26 frames the first time so it reads as a scroll; fewer for a
             # correction, which should be small and must not look like a
             # second journey.
             self.page.evaluate(SMOOTH_SCROLL_JS, [target, 26 if attempt == 0 else 8])
             self.page.wait_for_timeout(180 if attempt == 0 else 90)
             landed = loc.evaluate("el => el.getBoundingClientRect().top")
-            if abs(landed - offset) <= 4:
+            if abs(landed - offset * SCALE) <= 4 * SCALE:
                 return
             # At the end of the document the offset is simply unreachable,
             # and nudging again would only stutter in place.
@@ -308,7 +341,8 @@ class Recorder:
         # Recomputed rather than reusing the loop's last reading, which is
         # taken mid-correction and reports a distance nobody can act on.
         final = loc.evaluate("el => el.getBoundingClientRect().top")
-        print(f"          scroll_to({selector}) rested {final - offset:+.0f}px off")
+        print(f"          scroll_to({selector}) rested "
+              f"{(final - offset * SCALE) / SCALE:+.0f} design px off")
 
     def click_at(self, selector: str, nth: int = 0, settle: float = 0.45) -> None:
         """Travel to a control and press it where the camera can see it.
@@ -371,9 +405,33 @@ class Recorder:
         footer is the only way to lift the last card into the middle of the
         shot, and it shows as the page simply ending, which it does.
         """
+        # Design pixels, scaled: the body is zoomed, so padding set here
+        # is multiplied by the zoom as well, and 240 would become 480.
         self.page.evaluate(
-            "px => { document.body.style.paddingBottom = px + 'px'; }", pixels)
+            "px => { document.body.style.paddingBottom = px + 'px'; }",
+            pixels)
         self.page.wait_for_timeout(120)
+
+    def sweep(self, selector: str, offset: int = 176, frames: int = 20) -> None:
+        """One eased scroll, no measuring, no correction.
+
+        `scroll_to` verifies where it landed and nudges, which costs two
+        or three extra round trips to the browser. That is right for a
+        shot the narration is about to point at, and wrong for a stop the
+        camera is only passing through: on a machine busy encoding video
+        those round trips are what made a travelling beat arrive after the
+        line describing its destination had already been spoken.
+
+        Precision does not matter on the way past. It matters on arrival,
+        and arrival still uses `scroll_to`.
+        """
+        loc = self.page.locator(selector).first
+        try:
+            loc.wait_for(state="attached", timeout=15_000)
+        except Exception:
+            return
+        top = loc.evaluate("el => window.scrollY + el.getBoundingClientRect().top")
+        self.page.evaluate(SMOOTH_SCROLL_JS, [max(0, top - offset * SCALE), frames])
 
     def hold(self, seconds: float) -> None:
         self.page.wait_for_timeout(int(seconds * 1000))
@@ -448,7 +506,7 @@ def act_landing_hold(r: Recorder) -> None:
 
 
 def act_landing_hero(r: Recorder) -> None:
-    r.glide(520, 430, steps=30)
+    r.glide(520 * SCALE, 430 * SCALE, steps=30)
 
 
 def act_landing_strip(r: Recorder):
@@ -685,14 +743,20 @@ def act_page_depth(r: Recorder):
     r.scroll_to("text=The most dangerous door", offset=190)
     r.hold(0.3)
     yield
-    # Under sentence 0: the research, then the ladder.
-    r.hold(1.6)
-    r.scroll_to("text=Voice first. Caregiver second", offset=190)
-    r.hold(1.8)
-    r.scroll_to("text=A month of nights", offset=190)
-    r.on_sentence(1)                 # "Nightlight never stores..."
+    # Three stops on the way past, then the destination.
+    #
+    # The timings are deliberately short. During a real take the machine
+    # is encoding 4K while this runs, and the first version of this beat
+    # was still on the browser demo when the line about privacy was being
+    # spoken. Everything here has to finish with room to spare on a busy
+    # machine, not just on an idle one.
+    r.hold(1.0)
+    r.sweep("text=Voice first. Caregiver second", offset=190)
+    r.hold(0.8)
+    r.sweep("text=A month of nights", offset=190)
+    r.hold(0.8)
+    # Arrival is measured, because the narration points at it.
     r.scroll_to("text=Nightlight never stores", offset=210)
-    r.hold(0.5)
     r.point_at("text=Nightlight never stores")
     r.on_sentence(2)                 # "The Ring API offers none..."
     r.point_at("text=Facial or identity data")
@@ -702,7 +766,7 @@ def act_landing_strip_final(r: Recorder) -> None:
     r.page.evaluate(SMOOTH_SCROLL_JS, [0, 26])
     r.page.wait_for_timeout(240)
     # End on the product in its finished state: the quiet row, full frame.
-    r.glide(960, 380)
+    r.glide(960 * SCALE, 380 * SCALE)
 
 
 def act_hold(r: Recorder) -> None:
@@ -736,6 +800,17 @@ def main() -> int:
     OUT.mkdir(parents=True, exist_ok=True)
     for stale in ("raw", "work", "frames"):
         shutil.rmtree(OUT / stale, ignore_errors=True)
+    # Remove the previous take before starting this one.
+    #
+    # A recording that dies partway used to leave the old screen.mp4 and
+    # timings.json sitting there, and the next `assemble.py` paired them
+    # with the new narration without complaint. That produced a finished,
+    # playable, entirely wrong video: audio from one script over pictures
+    # from another. Deleting them first means a crash leaves nothing to
+    # assemble rather than something misleading.
+    for stale_file in ("screen.mp4", "timings.json", "cues.json"):
+        (OUT / stale_file).unlink(missing_ok=True)
+
     narration = {}
     manifest = OUT / "narration.json"
     if manifest.exists():
@@ -773,7 +848,7 @@ def main() -> int:
         # that runs before the real document arrives is discarded with it.
         page.add_init_script(
             "document.addEventListener('DOMContentLoaded', () => {"
-            + NATIVE_SCROLL_OFF_JS + CURSOR_JS + URL_BAR_JS + "});"
+            + ZOOM_JS + NATIVE_SCROLL_OFF_JS + CURSOR_JS + URL_BAR_JS + "});"
         )
 
         # Open the live site before the clock starts, so the first frame of
@@ -828,7 +903,7 @@ def main() -> int:
     subprocess.run(
         ["ffmpeg", "-y", "-i", str(raw),
          "-vf", f"scale={WIDTH}:{HEIGHT}:flags=lanczos",
-         "-c:v", "libx264", "-crf", "16", "-preset", "slow",
+         "-c:v", "libx264", "-crf", "18", "-preset", "medium",
          "-tune", "stillimage", "-pix_fmt", "yuv420p", "-an", str(mp4)],
         check=True, capture_output=True,
     )
