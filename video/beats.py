@@ -30,7 +30,8 @@ is recorded.
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+import re
+from dataclasses import dataclass
 
 # Polly long-form Gregory at 87 percent lands near this. Used only for the
 # pre-flight estimate; real timings come from the recording.
@@ -74,17 +75,17 @@ class Beat:
 BEATS: list[Beat] = [
     Beat(
         key="hello",
-        action="blank",
+        action="landing_hold",
         pause_before=0.0,
         say="Hi everyone, I am Ujwal.",
         note=(
-            "A human before an interface. Spoken over a blank screen, no "
-            "pause in front of it, so the video starts with a person."
+            "A human before an interface. No pause in front of it, so the "
+            "video starts with a person rather than with a page."
         ),
     ),
     Beat(
         key="problem",
-        action="blank",
+        action="landing_hold",
         pause_before=0.4,
         say=(
             "It is three in the morning. Someone living with dementia opens "
@@ -93,9 +94,10 @@ BEATS: list[Beat] = [
             "night, until they cannot do it any more."
         ),
         note=(
-            "Cold open on the problem with nothing on screen. The moment "
-            "things go wrong for the person the product is for, before the "
-            "product exists."
+            "The problem first, over the live site. Opening on a blank "
+            "background read as a video that had not started, and gave up "
+            "the one thing a blank screen cannot carry: the real address, "
+            "on screen from the first frame."
         ),
     ),
     Beat(
@@ -130,13 +132,31 @@ BEATS: list[Beat] = [
         action="app_open",
         pause_before=0.6,
         say=(
-            "Here is one of those nights, from the caregiver's app, running "
-            "against the live service. Twenty to three in the morning, the "
-            "door opened outside this household's normal pattern. The "
-            "recorded voice played at the chime. The person came back "
-            "inside, and nobody was woken."
+            "Here is one of those nights, from the caregiver's app, live "
+            "against the deployed service. Twenty to three in the morning, "
+            "the door opened outside this household's pattern. The recorded "
+            "voice played at the chime, the person came back inside, and "
+            "nobody was woken. And none of it is staged: every event went "
+            "through the same signed Ring webhook pipeline as a live one."
         ),
-        note="The story of a single night, in the order a family lives it.",
+        note=(
+            "The story of a single night, in the order a family lives it, "
+            "and only then the one sentence that says it was real."
+        ),
+    ),
+    Beat(
+        key="escalate",
+        action="app_escalation",
+        pause_before=0.5,
+        say=(
+            "And the night it did not work. Five past three, the activity "
+            "kept going, so the caregiver was woken. That is the red mark. "
+            "It never fails silently."
+        ),
+        note=(
+            "The second half of the sentence a judge should remember. "
+            "Showing the failure is what makes the successes believable."
+        ),
     ),
     Beat(
         key="voice",
@@ -170,10 +190,9 @@ BEATS: list[Beat] = [
         action="evidence",
         pause_before=0.6,
         say=(
-            "Measured on two thousand nine hundred and thirty-six nights "
-            "from thirty-four real homes we did not collect. A standard "
-            "alarm would have woken the caregiver fourteen thousand times. "
-            "Nightlight woke them seven hundred and seventy-four."
+            "Measured on thirty-four real homes we did not collect. A "
+            "standard alarm would have woken the caregiver fourteen thousand "
+            "times. Nightlight woke them seven hundred and seventy-four."
         ),
         note="Numbers from data we did not author, shown on the page.",
     ),
@@ -182,8 +201,8 @@ BEATS: list[Beat] = [
         action="evidence_cost",
         pause_before=0.4,
         say=(
-            "And here is what that cost, because waking someone less often "
-            "is easy if you simply stop noticing. Of thirty-four labelled "
+            "And what that cost, because waking someone less often is easy "
+            "if you simply stop noticing. Of thirty-four labelled "
             "night exits it flagged seven, and twenty-six of the twenty-"
             "seven it missed, the resident came back within half an hour."
         ),
@@ -196,14 +215,17 @@ BEATS: list[Beat] = [
         key="close",
         action="landing_strip_final",
         pause_before=0.5,
-        min_hold=6.0,
+        min_hold=9.0,
         say=(
-            "Nightlight. So that the nights stop being the reason a family "
-            "gives up."
+            "Across two thousand nine hundred and thirty-six real nights, "
+            "Nightlight reduced caregiver wake-ups by ninety-four and a half "
+            "percent. It is not about detecting more. It is about knowing "
+            "when waking someone is actually needed. Nightlight. So that the "
+            "nights stop being the reason a family gives up."
         ),
         note=(
-            "Product plus promise in one clause, held on the quiet row. "
-            "Never on a logo or a terminal."
+            "The headline number, the reframe, then product plus promise, "
+            "held on the quiet row. Never on a logo or a terminal."
         ),
     ),
     Beat(
@@ -218,6 +240,38 @@ BEATS: list[Beat] = [
         ),
     ),
 ]
+
+
+# --------------------------------------------------------------------------
+# Where inside a line each sentence falls.
+#
+# Two things need this and they must agree: the subtitler, which puts a cue
+# on screen, and the recorder, which moves the cursor to whatever that cue
+# is talking about. If they disagree the pointer describes one thing while
+# the words describe another, which is worse than not pointing at all.
+# --------------------------------------------------------------------------
+
+def sentences(line: str) -> list[str]:
+    parts = re.split(r"(?<=[.!?])\s+", line.strip())
+    return [p.strip() for p in parts if p.strip()]
+
+
+def sentence_spans(line: str, seconds: float) -> list[tuple[float, float]]:
+    """Start and end of each sentence, in seconds from the line's start.
+
+    Share by character count. Speech is not uniform, but the error inside
+    one sentence is tenths of a second, and every boundary is a real
+    boundary, which is what a cursor move needs.
+    """
+    parts = sentences(line)
+    total = sum(len(p) for p in parts) or 1
+    spans: list[tuple[float, float]] = []
+    clock = 0.0
+    for part in parts:
+        span = seconds * len(part) / total
+        spans.append((clock, clock + span))
+        clock += span
+    return spans
 
 
 def estimate() -> float:

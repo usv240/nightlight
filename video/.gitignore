@@ -1,3 +1,5 @@
 # Build artefacts: the recording, the Polly clips, the intermediates.
 # The finished video lives on YouTube and the scripts regenerate everything.
 build/
+__pycache__/
+voice-samples/

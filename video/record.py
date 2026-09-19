@@ -42,11 +42,28 @@ from pathlib import Path
 
 from playwright.sync_api import Page, sync_playwright
 
-from beats import BEATS
+from beats import BEATS, Beat, sentence_spans
 
 SITE = "https://d28hskpupjctiz.cloudfront.net"
 API = "https://qdvxx267lgnsitq242aplz722a0zuien.lambda-url.us-east-1.on.aws"
 OUT = Path(__file__).parent / "build"
+# The recording is 1920x1080 and the capture size must equal the viewport.
+#
+# Asking for 2560x1440 does not render more page. Playwright fits the
+# viewport into the requested canvas and pads the remainder, so the take
+# came back as 1920x1080 of product in the top-left corner of a 2560x1440
+# frame and grey over the other third. `assert_full_frame` below fails the
+# run rather than letting that reach an upload.
+#
+# The quality lever that does work is `device_scale_factor`: the page is
+# laid out at 1920 CSS pixels and rendered at two device pixels each, so
+# every glyph is supersampled before the capture downsamples it. That
+# alone took the master from 403 kbps to over 1000 at the same size.
+#
+# A genuinely larger frame would mean a larger viewport, which shows more
+# page at once and makes every word smaller relative to the frame. For a
+# judge watching in a browser window that is a worse video, not a better
+# one.
 WIDTH, HEIGHT = 1920, 1080
 
 # A pointer the page can actually draw. Installed on DOMContentLoaded.
@@ -86,6 +103,72 @@ CURSOR_JS = """
 })();
 """
 
+# The address of the thing being recorded, on screen the whole time.
+#
+# Playwright records the page, not the browser, so a video made this way
+# has no address bar and a judge has only the presenter's word that any of
+# it is live. The first attempt was a small chip in the bottom corner and
+# the reviewer's verdict was that there was no link visible at all, which
+# is the only verdict that matters. This is a full width bar where an
+# address bar belongs, at a size that survives a phone screen.
+#
+# It is not a picture of a URL. It reads `location.href` and re-reads it
+# four times a second, so it follows a client-side route change and cannot
+# display an address the page is not actually at. Nothing else is drawn:
+# no fake tabs, no back button, nothing implying an interaction that is
+# not happening.
+URL_BAR_HEIGHT = 56
+URL_BAR_JS = r"""
+(() => {
+  if (window.__nlUrlBar) return;
+  window.__nlUrlBar = true;
+  const H = 56;
+
+  // The page's own sticky headers pin themselves to the viewport top,
+  // which is now behind this bar, so they are pushed down by its height.
+  const style = document.createElement('style');
+  style.textContent =
+    'body { padding-top: ' + H + 'px !important; }' +
+    'header { top: ' + H + 'px !important; }';
+  document.documentElement.appendChild(style);
+
+  const bar = document.createElement('div');
+  bar.style.cssText = [
+    'position:fixed', 'top:0', 'left:0', 'right:0', 'height:' + H + 'px',
+    'z-index:2147483646', 'pointer-events:none',
+    'display:flex', 'align-items:center', 'padding:0 18px',
+    'background:#1f2430', 'border-bottom:1px solid rgba(255,255,255,0.10)',
+    'box-shadow:0 2px 10px rgba(0,0,0,0.20)',
+  ].join(';');
+
+  const omnibox = document.createElement('div');
+  omnibox.style.cssText = [
+    'display:flex', 'align-items:center', 'gap:11px', 'flex:1',
+    'height:36px', 'padding:0 18px', 'border-radius:999px',
+    'background:#2b313f', 'border:1px solid rgba(255,255,255,0.10)',
+    'font:500 19px/1 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace',
+    'color:#f2f4f8', 'letter-spacing:0.2px',
+  ].join(';');
+
+  const lock = document.createElement('span');
+  lock.textContent = '\u{1F512}';
+  lock.style.cssText = 'font-size:16px;line-height:1;opacity:0.9';
+
+  const text = document.createElement('span');
+  const paint = () => {
+    const href = location.href.replace(/\/$/, '');
+    if (text.textContent !== href) text.textContent = href;
+  };
+  paint();
+  setInterval(paint, 250);
+
+  omnibox.appendChild(lock);
+  omnibox.appendChild(text);
+  bar.appendChild(omnibox);
+  document.documentElement.appendChild(bar);
+})();
+"""
+
 # Ease a scroll rather than teleporting. Resolves when it has settled.
 SMOOTH_SCROLL_JS = """
 ([targetY, frames]) => new Promise((resolve) => {
@@ -108,16 +191,46 @@ SMOOTH_SCROLL_JS = """
 
 
 class Recorder:
-    def __init__(self, page: Page, started: float) -> None:
+    def __init__(self, page: Page, started: float,
+                 narration: dict[str, float] | None = None) -> None:
         self.page = page
         self.started = started
         self.timings: list[dict] = []
+        # How long Polly actually takes over each line, when narrate.py has
+        # already run. With it, a cursor move can be timed to the sentence
+        # that describes the thing being pointed at. Without it, the spoken
+        # estimate in beats.py is used and the pointing is approximate.
+        self.narration = narration or {}
+        self._beat: Beat | None = None
+        self._beat_at = 0.0
 
-    def mark(self, key: str) -> None:
+    def mark(self, beat: Beat) -> None:
         """Log the true second this beat began, relative to the video start."""
         at = time.monotonic() - self.started
-        self.timings.append({"key": key, "at": round(at, 3)})
-        print(f"  {at:6.2f}s  {key}")
+        self.timings.append({"key": beat.key, "at": round(at, 3)})
+        self._beat, self._beat_at = beat, time.monotonic()
+        print(f"  {at:6.2f}s  {beat.key}")
+
+    def line_seconds(self) -> float:
+        assert self._beat is not None
+        return self.narration.get(self._beat.key, self._beat.speak_seconds)
+
+    def on_sentence(self, n: int) -> None:
+        """Hold until sentence `n` of the current line starts being spoken.
+
+        This is why the cursor and the words agree. Every action used to
+        finish all of its pointing before the narration began, so the ring
+        sat on the last thing it touched for the whole beat: on the strip,
+        it rested on the red legend swatch while the line said "amber".
+        """
+        assert self._beat is not None
+        spans = sentence_spans(self._beat.say, self.line_seconds())
+        if n >= len(spans):
+            return
+        target = spans[n][0]
+        wait = target - (time.monotonic() - self._beat_at)
+        if wait > 0.01:
+            self.page.wait_for_timeout(int(wait * 1000))
 
     def glide(self, x: float, y: float, steps: int = 22) -> None:
         """Move the drawn cursor there, slowly enough to be followable."""
@@ -131,8 +244,8 @@ class Recorder:
         if box:
             self.glide(box["x"] + box["width"] / 2, box["y"] + box["height"] / 2)
 
-    def scroll_to(self, selector: str, offset: int = 120) -> None:
-        """Put an element's top just below the sticky header, not centred.
+    def scroll_to(self, selector: str, offset: int = 176) -> None:
+        """Put an element's top below the address bar and sticky header.
 
         Centring a tall panel leaves half of it off screen, which is how a
         tab strip ends up perfectly placed and the content under it
@@ -152,8 +265,65 @@ class Recorder:
         self.page.evaluate(SMOOTH_SCROLL_JS, [max(0, top - offset), 26])
         self.page.wait_for_timeout(180)
 
+    def click_at(self, selector: str, nth: int = 0, settle: float = 0.45) -> None:
+        """Travel to a control and press it where the camera can see it.
+
+        `page.click()` teleports the pointer and fires the event, which on
+        a recording looks like the page changed by itself. Every
+        navigation in this video is a visible journey: the ring arrives,
+        pauses long enough to read what it is about to press, and the
+        press animates before anything happens.
+        """
+        loc = self.page.locator(selector).nth(nth)
+        loc.scroll_into_view_if_needed()
+        box = loc.bounding_box()
+        if not box:
+            loc.click()
+            return
+        self.glide(box["x"] + box["width"] / 2, box["y"] + box["height"] / 2,
+                   steps=26)
+        self.hold(settle)
+        self.page.mouse.down()
+        self.page.wait_for_timeout(110)
+        self.page.mouse.up()
+
+    def give_scroll_room(self, pixels: int) -> None:
+        """Let the page scroll past its own last element.
+
+        The escalated incident is the final card on the caregiver app, so
+        at maximum scroll it sits at y=866 of a 1080 frame and the burned
+        in caption lands straight across it. No scroll offset can fix that,
+        because the document has run out of document. Adding room below the
+        footer is the only way to lift the last card into the middle of the
+        shot, and it shows as the page simply ending, which it does.
+        """
+        self.page.evaluate(
+            "px => { document.body.style.paddingBottom = px + 'px'; }", pixels)
+        self.page.wait_for_timeout(120)
+
     def hold(self, seconds: float) -> None:
         self.page.wait_for_timeout(int(seconds * 1000))
+
+
+def assert_full_frame(video: Path) -> None:
+    """Fail if the recording is letterboxed instead of full of product.
+
+    Playwright pads rather than scales when the capture size and the
+    viewport disagree, and the padding is a flat grey that looks like a
+    deliberate background until someone measures it. One take shipped with
+    a third of the frame grey and the finished file still played, still
+    passed every other check, and was still unusable.
+    """
+    out = subprocess.run(
+        ["ffprobe", "-v", "error", "-select_streams", "v:0",
+         "-show_entries", "stream=width,height", "-of", "csv=p=0", str(video)],
+        check=True, capture_output=True, text=True).stdout.strip()
+    w, h = (int(v) for v in out.split(",")[:2])
+    if (w, h) != (WIDTH, HEIGHT):
+        raise SystemExit(
+            f"recorded {w}x{h} but the viewport is {WIDTH}x{HEIGHT}. "
+            "Playwright pads the difference; make the two match."
+        )
 
 
 def reset_demo() -> None:
@@ -176,60 +346,148 @@ def reset_demo() -> None:
 # caller holds it for as long as the spoken line needs.
 # --------------------------------------------------------------------------
 
-def act_blank(r: Recorder) -> None:
-    pass
+def act_landing_hold(r: Recorder) -> None:
+    """The opening beats, over the real site rather than a blank screen.
+
+    The first cut opened on an empty background so the problem could land
+    before the product did. On review that read as a video that had not
+    started yet, and it wasted the one thing a blank screen cannot show:
+    the address, live, from the first frame.
+    """
 
 
 def act_landing_hero(r: Recorder) -> None:
-    r.page.goto(SITE, wait_until="networkidle", timeout=90_000)
-    r.page.wait_for_selector(".night-mark", timeout=60_000)
-    r.glide(520, 430)
+    r.glide(520, 430, steps=30)
 
 
-def act_landing_strip(r: Recorder) -> None:
+def act_landing_strip(r: Recorder):
+    """The visual argument, pointed at in time with the words.
+
+    Everything before the `yield` composes the shot and happens in
+    silence. Everything after runs while the line is being spoken, so the
+    ring is on the amber swatch during "amber" and the red one during
+    "red". The page's whole argument is two colours; the cursor has to
+    agree with the narration about which one is being discussed.
+    """
     r.point_at(".night-mark[data-kind='voice']")
-    r.hold(1.6)
+    yield
+    r.on_sentence(2)                              # "Amber means..."
+    r.point_at(".night-mark--legend", nth=1)
+    r.hold(0.9)
+    r.point_at(".night-mark[data-kind='voice']")
+    r.on_sentence(3)                              # "Red means it did not..."
+    r.point_at(".night-mark--legend", nth=2)
+    r.hold(0.9)
     r.point_at(".night-mark[data-kind='woken']")
-    r.hold(1.6)
-    # Rest on each legend swatch. The page's whole argument is two colours.
-    for i in range(3):
-        r.point_at(".night-mark--legend", nth=i)
-        r.hold(1.3)
+    r.on_sentence(4)                              # "Twenty-nine of thirty..."
+    r.point_at(".night-mark--legend", nth=0)
 
 
-def act_app_open(r: Recorder) -> None:
-    r.page.goto(f"{SITE}/app/", wait_until="networkidle", timeout=90_000)
+def act_app_open(r: Recorder):
+    # Navigate the way a caregiver would, by pressing the button, so the
+    # address in the chip changes because something was clicked.
+    r.page.evaluate(SMOOTH_SCROLL_JS, [0, 20])
+    r.page.wait_for_timeout(160)
+    # By href, not by text. `text=` matches every ancestor containing the
+    # words, and the first of those in document order is the header itself,
+    # so a text selector here presses the middle of the navigation bar.
+    r.click_at("header a[href='/app/']")
     # Wait for real data, not for a spinner to look done.
     r.page.wait_for_function(
         "() => /\\d+/.test(document.body.innerText) && "
         "document.body.innerText.includes('in a row')",
         timeout=60_000,
     )
-    r.scroll_to("text=Recent nights", offset=140)
+    r.scroll_to("text=Recent nights", offset=190)
     r.hold(0.8)
+    yield
+    # "Twenty to three in the morning, the door opened outside this
+    # household's pattern." The row that says so, while it is being said,
+    # rather than a cursor parked in a corner and a judge left to hunt.
+    r.on_sentence(1)
+    r.point_at("li:has-text('02:40')")
+
+
+# The escalated incident, not the section it lives in. Framing the heading
+# put the one card that matters at the very bottom of the shot, where the
+# burned-in caption band covers it.
+ESCALATED_CARD = 'li:has-text("ESCALATED")'
+
+
+def act_app_escalation(r: Recorder) -> None:
+    """The night the voice was not enough.
+
+    The reviewer's sentence has two halves and the first cut of this video
+    only showed the first. This is the second: the incident record, where
+    the escalation is written down.
+
+    The offset is chosen against the caption, not against the page. A
+    caption burned in at MarginV 34 occupies roughly the bottom 200px of a
+    1080p frame, so the card is parked near the middle of the shot.
+    """
+    # 240px of room, then park the card at y=700. Measured against the
+    # live page rather than guessed: without the room the highest the card
+    # can reach is y=866, and the caption band begins at roughly y=880.
+    r.give_scroll_room(240)
+    r.scroll_to(ESCALATED_CARD, offset=700)
+    r.hold(0.6)
+    r.point_at(ESCALATED_CARD)
 
 
 def act_app_voice(r: Recorder) -> None:
-    r.scroll_to("text=The voice at the door", offset=140)
+    r.scroll_to("text=The voice at the door", offset=196)
     r.hold(0.6)
     r.point_at("text=Dad, it is night time")
 
 
-def act_app_streak(r: Recorder) -> None:
+def act_app_streak(r: Recorder):
     r.page.evaluate(SMOOTH_SCROLL_JS, [0, 26])
     r.page.wait_for_timeout(200)
     r.point_at("text=in a row, and counting")
-    r.hold(1.0)
+    yield
+    # The 18 and the 29 are the pair a reviewer flagged as confusing, so
+    # the cursor visits each as its own half of the sentence is spoken.
+    r.on_sentence(1)
+    r.point_at("text=in a row, and counting")
+    r.hold(2.2)
     r.point_at("text=undisturbed in total")
 
 
-def act_evidence(r: Recorder) -> None:
-    r.page.goto(SITE, wait_until="networkidle", timeout=90_000)
-    r.scroll_to("text=Measured, not promised", offset=200)
-    r.point_at("text=Measured, not promised")
+def act_evidence(r: Recorder):
+    # Back to the landing page by pressing the wordmark, not by a scripted
+    # jump to a URL. The chip follows the route back.
+    r.page.evaluate(SMOOTH_SCROLL_JS, [0, 20])
+    r.page.wait_for_timeout(160)
+    # The caregiver app renders its header only after it has data, so this
+    # is the wordmark by position within the header rather than by an href
+    # that is absent from the exported HTML. It is the header's only link.
+    r.click_at("header a")
+    r.page.wait_for_selector(".night-mark", timeout=60_000)
+    # The comparison cards, not the proof banner. The banner states 94.5
+    # percent in running text, which on a 1080p frame is small print with a
+    # caption across it; these are the same three numbers at display size,
+    # with the reduction written underneath the middle one. Parking the
+    # heading at y=150 puts all three cards between y=340 and y=540, clear
+    # of the caption band by a wide margin.
+    #
+    # By id and structure, not by text. `text=774` also matches the proof
+    # banner, which says "Nightlight: 774." in running prose, so a text
+    # selector here points at the paragraph instead of the card.
+    r.scroll_to("#proof h2", offset=206)
+    r.hold(0.5)
+    yield
+    r.on_sentence(1)          # "A standard alarm would have woken..."
+    r.point_at("#proof div.grid > div", nth=0)
+    r.on_sentence(2)          # "Nightlight woke them seven hundred..."
+    r.point_at("#proof div.grid > div", nth=1)
 
 
 def act_evidence_cost(r: Recorder) -> None:
+    # Back up to the proof banner, the only place the cost is written out:
+    # 34 labelled exits, 7 flagged, 26 of the 27 returned. The move is
+    # upward and deliberate, landing on the words "and what that cost".
+    r.scroll_to("text=Measured, not promised", offset=286)
+    r.hold(0.4)
     r.point_at("text=And what that restraint cost")
 
 
@@ -245,10 +503,11 @@ def act_hold(r: Recorder) -> None:
 
 
 ACTIONS = {
-    "blank": act_blank,
+    "landing_hold": act_landing_hold,
     "landing_hero": act_landing_hero,
     "landing_strip": act_landing_strip,
     "app_open": act_app_open,
+    "app_escalation": act_app_escalation,
     "app_voice": act_app_voice,
     "app_streak": act_app_streak,
     "evidence": act_evidence,
@@ -259,9 +518,22 @@ ACTIONS = {
 
 
 def main() -> int:
-    if OUT.exists():
-        shutil.rmtree(OUT)
-    OUT.mkdir(parents=True)
+    # Clear the picture, keep the voice. `narrate.py` only needs beats.py,
+    # so running it first lets the recorder time each cursor move against
+    # the real length of the line instead of an estimate. Wiping the whole
+    # build directory here would throw that away, and did: it also took
+    # the voice samples with it.
+    OUT.mkdir(parents=True, exist_ok=True)
+    for stale in ("raw", "work", "frames"):
+        shutil.rmtree(OUT / stale, ignore_errors=True)
+    narration = {}
+    manifest = OUT / "narration.json"
+    if manifest.exists():
+        narration = {n["key"]: n["seconds"]
+                     for n in json.loads(manifest.read_text(encoding="utf8"))}
+        print(f"timing the cursor against {len(narration)} recorded lines")
+    else:
+        print("no narration yet; cursor moves use the estimate in beats.py")
     video_dir = OUT / "raw"
     video_dir.mkdir()
 
@@ -273,7 +545,12 @@ def main() -> int:
             viewport={"width": WIDTH, "height": HEIGHT},
             record_video_dir=str(video_dir),
             record_video_size={"width": WIDTH, "height": HEIGHT},
-            device_scale_factor=1,
+            # Render at two device pixels per CSS pixel and let the capture
+            # downsample. The layout is unchanged, because CSS pixels are
+            # unchanged, but every glyph is supersampled rather than
+            # rasterised once at 1x. On a video that is mostly small text
+            # on white, this is the single biggest quality lever available.
+            device_scale_factor=2,
             color_scheme="light",
         )
         # Force light before first paint, so the recording never depends on
@@ -282,34 +559,59 @@ def main() -> int:
             "try { localStorage.setItem('nightlight-theme','light'); } catch (e) {}"
         )
         page = context.new_page()
+        # On DOMContentLoaded rather than at document start: an init script
+        # that runs before the real document arrives is discarded with it.
         page.add_init_script(
-            "document.addEventListener('DOMContentLoaded', () => {" + CURSOR_JS + "});"
+            "document.addEventListener('DOMContentLoaded', () => {"
+            + CURSOR_JS + URL_BAR_JS + "});"
         )
 
-        # A blank page the opening beats play over. Not black: black reads
-        # as a missing frame. This is the product's own background colour.
-        page.goto("data:text/html,<body style='background:%23fafaf8'></body>")
-        page.wait_for_timeout(400)
+        # Open the live site before the clock starts, so the first frame of
+        # the video is the product at its real address rather than a page
+        # still loading. Loading is not part of the story.
+        page.goto(SITE, wait_until="networkidle", timeout=90_000)
+        page.wait_for_selector(".night-mark", timeout=60_000)
+        page.wait_for_timeout(600)
 
         started = time.monotonic()
-        r = Recorder(page, started)
+        r = Recorder(page, started, narration)
         print("recording:")
         for beat in BEATS:
             if beat.pause_before:
                 r.hold(beat.pause_before)
-            ACTIONS[beat.action](r)
-            r.mark(beat.key)
-            r.hold(beat.budget - beat.pause_before)
+            steps = ACTIONS[beat.action](r)
+            if hasattr(steps, "__next__"):
+                # Compose the shot in silence, mark the beat, then let the
+                # remaining steps run while the line is spoken over them.
+                next(steps, None)
+                r.mark(beat)
+                spent = time.monotonic()
+                for _ in steps:
+                    pass
+                spent = time.monotonic() - spent
+            else:
+                r.mark(beat)
+                spent = 0.0
+            r.hold(max(0.0, beat.budget - beat.pause_before - spent))
 
         total = time.monotonic() - started
         context.close()
         browser.close()
 
     raw = next(video_dir.glob("*.webm"))
+    assert_full_frame(raw)
     mp4 = OUT / "screen.mp4"
+    # The master everything else is cut from, so it is encoded well above
+    # the quality of the final file. crf 20 on a screen recording produced
+    # a 400 kbps master; text survived, but every later generation, the
+    # segment cuts and the caption burn, took another bite out of it.
+    # `tune stillimage` is x264's mode for exactly this content: large flat
+    # areas and hard edges, where the default deblocking softens type.
     subprocess.run(
-        ["ffmpeg", "-y", "-i", str(raw), "-c:v", "libx264", "-crf", "20",
-         "-preset", "medium", "-pix_fmt", "yuv420p", "-an", str(mp4)],
+        ["ffmpeg", "-y", "-i", str(raw),
+         "-vf", f"scale={WIDTH}:{HEIGHT}:flags=lanczos",
+         "-c:v", "libx264", "-crf", "16", "-preset", "slow",
+         "-tune", "stillimage", "-pix_fmt", "yuv420p", "-an", str(mp4)],
         check=True, capture_output=True,
     )
     dur = float(subprocess.run(

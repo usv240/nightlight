@@ -1,4 +1,4 @@
-# The demo video, built by five scripts
+# The demo video, built by six scripts
 
 No video editor at any point. Run in order:
 
@@ -8,6 +8,7 @@ python record.py       # Playwright drives and films the live site
 python narrate.py      # one Amazon Polly clip per beat
 python assemble.py     # audio built against the recording, then dead air cut
 python subtitle.py     # cues from the finished cut, burned in
+python audit.py        # checks the built file against every instruction
 ```
 
 Output lands in `build/`: `nightlight-demo-captioned.mp4` is the upload,
@@ -61,7 +62,33 @@ file and rendered as a banner across a third of a 1080p frame.
 **Do not upload the .srt alongside the captioned mp4.** A viewer enabling
 CC would see two stacked sets.
 
-## The bug this found
+**A page can run out of page.** The escalated incident is the last card on
+the caregiver app, so at maximum scroll it sits at y=866 of a 1080 frame
+and the burned-in caption lands across it. No offset fixes that, because
+the document has ended. `give_scroll_room` adds space below the footer so
+the last card can reach the middle of the shot.
+
+**`text=` matches ancestors too.** `text=774` also matches the proof
+banner, which says "Nightlight: 774." in prose, so the cursor pointed at a
+paragraph instead of the card it was describing. Shot selectors are
+pinned to ids and structure.
+
+**A recording has no address bar.** Playwright films the page, not the
+browser, so a judge has only the presenter's word that any of it is live.
+`URL_CHIP_JS` renders `location.href` and re-reads it four times a second,
+which means it follows a route change and cannot display an address the
+page is not actually at.
+
+## Why audit.py exists
+
+Feedback was applied carefully to `docs/VIDEO_SCRIPT.md`, then the video
+was built from `beats.py`, a different file, and five of the asks were
+silently lost. A prose script and a built video cannot be compared by
+reading them. `audit.py` reads the shipped artefacts instead: the text
+Polly was given, the beats the recorder ran, the caption style burned into
+the frames, and the encoded file's own duration and bitrate.
+
+## The bugs this found
 
 `record.py` resets demo state before filming, and the recording then
 showed "streak: 1 night" and "no incidents recorded" while the narration
@@ -77,3 +104,13 @@ it twice, which a judge would, broke the live demo.
 Fixed, and pinned by `apps/backend/test/replay-idempotent.test.ts`,
 including a test that a genuine redelivery of a single event is still
 suppressed.
+
+A still frame pulled from the finished cut showed the incident record
+printing `Opened Sun, 13 Sep 2026 07:05:00 GMT` underneath narration that
+said "five past three", on the same screen where Recent nights already
+said `02:40`. The caregiver app was rendering UTC. Fixed in
+`apps/web/src/lib/time.ts` and pinned by
+`apps/web/test/opened-local.test.ts`.
+
+Neither bug is visible from inside the process. One needed the demo reset
+before filming; the other needed somebody to read a frame.

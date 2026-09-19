@@ -137,18 +137,22 @@ def main() -> int:
     # with the product rather than supporting it. PlayResY pins the
     # reference height so the size below means what it looks like.
     #
-    # The box alpha is the first byte of &HAABBGGRR, where 00 is opaque.
-    # C0 was chosen first and left the text unreadable over the evidence
-    # cards, which is the one shot where the numbers matter most.
+    # The box alpha is the first byte of &HAABBGGRR, and it runs backwards:
+    # 00 is fully opaque, FF fully transparent. C0 was tried first and left
+    # the text unreadable over the evidence cards, then 14 was effectively
+    # solid and sat on the page like a bar of tape. 80 percent opaque is
+    # 20 percent of 255, which is 0x33: the page still reads through it,
+    # the words still read over it.
     style = (
         "FontName=Segoe UI,FontSize=15,PrimaryColour=&H00FFFFFF,"
-        "OutlineColour=&H14000000,BorderStyle=3,Outline=1,Shadow=0,"
+        "OutlineColour=&H33000000,BorderStyle=3,Outline=1,Shadow=0,"
         "MarginV=34,Alignment=2"
     )
     proc = subprocess.run(
         ["ffmpeg", "-y", "-i", "nightlight-demo.mp4",
          "-vf", f"subtitles=subs.srt:force_style='{style}'",
-         "-c:v", "libx264", "-crf", "20", "-preset", "medium",
+         "-c:v", "libx264", "-crf", "18", "-preset", "slow",
+         "-tune", "stillimage",
          "-pix_fmt", "yuv420p", "-c:a", "copy", burned.name],
         cwd=OUT, capture_output=True, text=True,
     )

@@ -7,8 +7,12 @@ script, because the assembler needs to place each line at the second its
 beat actually began. A single long clip can only be laid down at the start
 and then hoped about.
 
-Voice and engine: Gregory, long-form. The long-form engine is noticeably
+Voice and engine: Patrick, long-form. The long-form engine is noticeably
 better at a paragraph than neural is, and this narration is paragraphs.
+Patrick reads warmer and slightly higher than Gregory, which suits a
+script about somebody's family rather than about a system. The generative
+engine has other male voices, Matthew and Stephen, but it ignores
+`prosody rate`, so the pacing below would be lost.
 The rate is 87 percent because the default pace reads as an advertisement
 and this is a video about somebody's exhausted parent.
 
@@ -29,7 +33,7 @@ from beats import BEATS
 OUT = Path(__file__).parent / "build"
 AUDIO = OUT / "audio"
 REGION = "us-east-1"
-VOICE = "Gregory"
+VOICE = "Patrick"
 ENGINE = "long-form"
 RATE = "87%"
 
@@ -48,10 +52,10 @@ def duration(path: Path) -> float:
 
 
 def main() -> int:
-    if not OUT.exists():
-        print("build/ is missing. Run record.py first.", file=sys.stderr)
-        return 1
-    AUDIO.mkdir(exist_ok=True)
+    # Runs before record.py, so it creates the build directory rather than
+    # expecting one. The recorder uses these clip lengths to time each
+    # cursor move to the sentence that describes what it is pointing at.
+    AUDIO.mkdir(parents=True, exist_ok=True)
 
     manifest = []
     for beat in BEATS:

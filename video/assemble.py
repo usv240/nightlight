@@ -35,7 +35,11 @@ from pathlib import Path
 from beats import BEATS
 
 OUT = Path(__file__).parent / "build"
-SLACK = 2.0          # seconds a beat may hold after its line ends
+# Seconds a beat may hold after its line ends. Two was comfortable until
+# the script grew by a beat; at 2:56 against a hard 3:00 ceiling the margin
+# was thinner than YouTube duration rounding. This removes settled screen
+# only. Nothing is ever sped up.
+SLACK = 1.3
 TAIL_KEEP = 1.6      # seconds held after the very last word
 
 
@@ -139,9 +143,13 @@ def cut_video(src: Path, segments: list[tuple[float, float]], dest: Path,
         if b - a < 0.08:
             continue
         piece = workdir / f"seg{i}.mp4"
+        # Matches the master's settings. A segment re-encoded at a lower
+        # quality than the thing it was cut from is a generation lost for
+        # nothing, and this file is cut into a dozen of them.
         run(["ffmpeg", "-y", "-ss", f"{a:.3f}", "-t", f"{b - a:.3f}",
-             "-i", str(src), "-c:v", "libx264", "-crf", "20",
-             "-preset", "medium", "-pix_fmt", "yuv420p", "-an", str(piece)])
+             "-i", str(src), "-c:v", "libx264", "-crf", "16",
+             "-preset", "slow", "-tune", "stillimage",
+             "-pix_fmt", "yuv420p", "-an", str(piece)])
         pieces.append(piece)
     listing = workdir / "segments.txt"
     listing.write_text(
@@ -197,7 +205,7 @@ def main() -> int:
 
     final = OUT / "nightlight-demo.mp4"
     run(["ffmpeg", "-y", "-i", str(cut), "-i", str(OUT / "narration.mp3"),
-         "-c:v", "copy", "-c:a", "aac", "-b:a", "128k", "-shortest", str(final)])
+         "-c:v", "copy", "-c:a", "aac", "-b:a", "192k", "-shortest", str(final)])
 
     (OUT / "cues.json").write_text(json.dumps(
         {"duration": round(probe(final), 3),
