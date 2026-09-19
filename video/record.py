@@ -756,7 +756,23 @@ def act_page_depth(r: Recorder):
     r.sweep("text=A month of nights", offset=190)
     r.hold(0.8)
     # Arrival is measured, because the narration points at it.
-    r.scroll_to("text=Nightlight never stores", offset=210)
+    #
+    # 500 rather than 210, and the reason is not composition. At 210 the
+    # developers section sat in the lower third of the frame with the line
+    # "148 tests across engine, webhook intake, simulator and the HTTP
+    # path" legible at 4K. A test count means nothing to anyone watching a
+    # three minute demo, and it is a number that changes every time a test
+    # is added: the first cut of this shot said 147 while the deployed
+    # site said 148, which is the exact drift this project exists to
+    # prevent, in the one place nothing was checking. Parking the privacy
+    # section lower pushes that line past the bottom edge, so the shot
+    # cannot go stale.
+    #
+    # The offset is measured from this heading, not from the section top,
+    # which sits 372 frame pixels above it. 330 was computed against the
+    # section and left the line at y=1859, still in frame. framecheck.py
+    # is what caught that, and now asserts the line stays off frame.
+    r.scroll_to("text=Nightlight never stores", offset=500)
     r.point_at("text=Nightlight never stores")
     r.on_sentence(2)                 # "The Ring API offers none..."
     r.point_at("text=Facial or identity data")
