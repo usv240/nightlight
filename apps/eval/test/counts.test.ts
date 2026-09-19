@@ -108,6 +108,36 @@ describe("published counts match the repository", () => {
     expect(wrong.map((d) => d.file)).toEqual([]);
   });
 
+  /*
+    The friction log is a judged deliverable, and its size is quoted.
+
+    The submission said "Five entries in FRICTION_LOG.md" and listed five
+    of them by name while the file had grown to seven. The two newest are
+    the two most worth reading: one is positive about a Ring tool that
+    landed after we had architected around its absence, and one is a bug
+    in our own servers rather than in anyone's product. Undercounting
+    those is the one direction this project cannot afford, because the
+    claim being made is that we reported friction honestly.
+  */
+  it("states the number of friction log entries the file actually has", () => {
+    const log = fs.readFileSync(path.join(repo, "FRICTION_LOG.md"), "utf8");
+    const actual = (log.match(/^## Entry \d+:/gm) ?? []).length;
+    expect(actual).toBeGreaterThan(0);
+    const words: Record<number, string> = {
+      5: "five", 6: "six", 7: "seven", 8: "eight", 9: "nine", 10: "ten",
+    };
+    const word = words[actual];
+    expect(word, `no spelling for ${actual}; add it here`).toBeTruthy();
+    const wrong = PUBLIC_TEXT.filter((d) => {
+      const m = d.text.match(/(\w+) entries in FRICTION_LOG/i);
+      return m ? m[1]!.toLowerCase() !== word : false;
+    });
+    expect(
+      wrong.map((d) => d.file),
+      `FRICTION_LOG.md has ${actual} entries`,
+    ).toEqual([]);
+  });
+
   it("states a total that is not smaller than the suite", () => {
     // Not equality. A run adds tests more often than it removes them, and
     // a claim that undershoots reality is the failure mode worth catching:
