@@ -160,6 +160,22 @@ proof that this is one live site and not three screenshots.
 **Never jump-scroll.** Ease every scroll over about 26 animation frames.
 A teleporting scroll reads as a dropped frame.
 
+**Turn off the page's own `scroll-behavior: smooth` first.** With it on,
+every frame of your easing is treated by the browser as a *new* animated
+scroll rather than a position, so the scroll chases a moving target and
+comes to rest wherever it happens to be. One shot rested 222px short of
+its offset and put its last element under the burned-in caption, and it
+had been quietly wrong in every earlier take. Inject
+`html, body { scroll-behavior: auto !important }` rather than using
+Playwright's reduced-motion flag, which would also disable the page's own
+entrance animations, and those are part of what the product looks like.
+
+**Then verify where the scroll landed and correct it.** A target computed
+before the page has settled is stale by the time the animation ends:
+content above it changes height and takes it with it. Measure the
+element's viewport position afterwards and nudge once, with fewer frames
+so the correction does not read as a second journey.
+
 **Point at the thing while it is being said, not before.** This one is
 easy to get wrong and invisible until you check. If an action runs to
 completion before its line starts, the cursor sits on whatever it touched
