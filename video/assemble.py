@@ -66,6 +66,42 @@ def silence(seconds: float, dest: Path) -> None:
          str(dest)])
 
 
+def normalise(src: Path, dest: Path) -> None:
+    """Bring the narration to broadcast speech loudness, in two passes.
+
+    Polly's output came out at -26.5 LUFS, about twelve decibels under
+    what YouTube targets. That matters because YouTube's normalisation is
+    one-directional: it turns loud uploads down and never turns quiet ones
+    up. A judge working through a list of submissions would have reached
+    for the volume on this one and not on the others, which is a bad first
+    two seconds for a video about somebody's exhausted parent.
+
+    Two passes rather than one. A single pass guesses at the gain from a
+    running estimate and drifts on material with long silences, and this
+    track is mostly silence between beats. The first pass measures, the
+    second applies exactly what was measured, with a true-peak ceiling of
+    -1.5 dBTP so the loudest syllable cannot clip after transcoding.
+    """
+    target = "I=-16:TP=-1.5:LRA=11"
+    probe = subprocess.run(
+        ["ffmpeg", "-hide_banner", "-nostats", "-i", str(src),
+         "-af", f"loudnorm={target}:print_format=json", "-f", "null", "-"],
+        capture_output=True, text=True,
+    )
+    blob = probe.stderr[probe.stderr.rfind("{"): probe.stderr.rfind("}") + 1]
+    try:
+        m = json.loads(blob)
+    except json.JSONDecodeError:
+        raise SystemExit(f"could not measure loudness:\n{probe.stderr[-800:]}")
+    run(["ffmpeg", "-y", "-i", str(src), "-af",
+         f"loudnorm={target}:measured_I={m['input_i']}:measured_TP={m['input_tp']}"
+         f":measured_LRA={m['input_lra']}:measured_thresh={m['input_thresh']}"
+         f":offset={m['target_offset']}:linear=true",
+         "-c:a", "libmp3lame", "-q:a", "2", str(dest)])
+    print(f"  narration {float(m['input_i']):.1f} LUFS -> -16.0 target, "
+          f"peak {float(m['input_tp']):.1f} dBTP")
+
+
 def concat_audio(parts: list[Path], dest: Path) -> None:
     listing = dest.with_suffix(".txt")
     listing.write_text(
@@ -225,8 +261,13 @@ def main() -> int:
     new_starts = {k: shift(v) for k, v in starts.items()}
     placed = build_audio(new_starts, narr, cut_len, work, OUT / "narration.mp3")
 
+    # Loudness last, on the finished narration track, so every gap and
+    # every clip is included in the measurement.
+    loud = OUT / "narration-normalised.mp3"
+    normalise(OUT / "narration.mp3", loud)
+
     final = OUT / "nightlight-demo.mp4"
-    run(["ffmpeg", "-y", "-i", str(cut), "-i", str(OUT / "narration.mp3"),
+    run(["ffmpeg", "-y", "-i", str(cut), "-i", str(loud),
          "-c:v", "copy", "-c:a", "aac", "-b:a", "192k", "-shortest", str(final)])
 
     (OUT / "cues.json").write_text(json.dumps(
