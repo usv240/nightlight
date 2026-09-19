@@ -169,6 +169,26 @@ URL_BAR_JS = r"""
 })();
 """
 
+# The site sets `scroll-behavior: smooth`, which fights the easing below.
+#
+# Every frame of our animation calls window.scrollTo, and with smooth
+# behaviour the browser treats each of those as a new animated scroll
+# rather than a position. The result is a scroll that chases a moving
+# target and comes to rest wherever it happens to be: the connect card
+# rested 222px short of its offset, which put its last step under the
+# burned-in caption.
+#
+# Turning it off here rather than using Playwright's reduced-motion flag,
+# which would also disable the page's own entrance animations. Those are
+# part of what the product looks like and belong in the recording.
+NATIVE_SCROLL_OFF_JS = """
+(() => {
+  const style = document.createElement('style');
+  style.textContent = 'html, body { scroll-behavior: auto !important; }';
+  document.documentElement.appendChild(style);
+})();
+"""
+
 # Ease a scroll rather than teleporting. Resolves when it has settled.
 SMOOTH_SCROLL_JS = """
 ([targetY, frames]) => new Promise((resolve) => {
@@ -259,11 +279,36 @@ class Recorder:
             loc.wait_for(state="attached", timeout=15_000)
         except Exception:
             return
-        top = loc.evaluate(
-            "el => window.scrollY + el.getBoundingClientRect().top"
-        )
-        self.page.evaluate(SMOOTH_SCROLL_JS, [max(0, top - offset), 26])
-        self.page.wait_for_timeout(180)
+        # Scroll, then check where it actually landed, then correct.
+        #
+        # A scroll target computed before the page has finished settling is
+        # stale by the time the animation ends: lazy content above the
+        # target changes height and takes the target with it. The connect
+        # card came to rest 222px short of its offset that way, which put
+        # the fourth step under the burned-in caption. One measured nudge
+        # afterwards is cheaper than discovering it in a frame.
+        for attempt in range(3):
+            top = loc.evaluate("el => window.scrollY + el.getBoundingClientRect().top")
+            target = max(0, top - offset)
+            # 26 frames the first time so it reads as a scroll; fewer for a
+            # correction, which should be small and must not look like a
+            # second journey.
+            self.page.evaluate(SMOOTH_SCROLL_JS, [target, 26 if attempt == 0 else 8])
+            self.page.wait_for_timeout(180 if attempt == 0 else 90)
+            landed = loc.evaluate("el => el.getBoundingClientRect().top")
+            if abs(landed - offset) <= 4:
+                return
+            # At the end of the document the offset is simply unreachable,
+            # and nudging again would only stutter in place.
+            if self.page.evaluate(
+                "() => window.scrollY >= document.documentElement.scrollHeight"
+                " - window.innerHeight - 1"
+            ):
+                return
+        # Recomputed rather than reusing the loop's last reading, which is
+        # taken mid-correction and reports a distance nobody can act on.
+        final = loc.evaluate("el => el.getBoundingClientRect().top")
+        print(f"          scroll_to({selector}) rested {final - offset:+.0f}px off")
 
     def click_at(self, selector: str, nth: int = 0, settle: float = 0.45) -> None:
         """Travel to a control and press it where the camera can see it.
@@ -286,6 +331,35 @@ class Recorder:
         self.page.mouse.down()
         self.page.wait_for_timeout(110)
         self.page.mouse.up()
+
+    def warm(self, url: str) -> float:
+        """Make one throwaway request from the page, before the camera cares.
+
+        Lambda cold starts are the difference between a click that answers
+        in two seconds and one that answers in seven. The recorder already
+        warms the route over urllib before a take, but that warms whatever
+        container that connection reached; the browser opens its own TLS
+        session and can land on a cold one. Calling it from the page warms
+        the path the on-camera click will actually use.
+
+        This runs in a beat's compose phase, which is silent and is cut
+        from the finished video, so the wait costs nothing and the click a
+        viewer sees is still a real request.
+        """
+        took = self.page.evaluate(
+            """async (u) => {
+                 const t = performance.now();
+                 try {
+                   await (await fetch(u, {method: 'POST',
+                     headers: {'content-type': 'application/json'},
+                     body: '{}'})).json();
+                 } catch (e) {}
+                 return Math.round(performance.now() - t);
+               }""",
+            url,
+        )
+        print(f"          warmed {url.rsplit('/', 1)[-1]} in {took}ms")
+        return took / 1000.0
 
     def give_scroll_room(self, pixels: int) -> None:
         """Let the page scroll past its own last element.
@@ -339,6 +413,23 @@ def reset_demo() -> None:
     with urllib.request.urlopen(req, timeout=120) as r:
         r.read()
     print("demo state reset on the live service")
+
+    # Warm the Ring proof before the take, not during it. The first call on
+    # a Lambda container pays a cold start plus the one-time seed of the
+    # sandbox household; every call after that is a few hundred
+    # milliseconds. The on-camera press should be one of the later ones,
+    # so the rows arrive while the first sentence is still being spoken
+    # rather than after the verdicts have already been read out.
+    warm = urllib.request.Request(
+        f"{API}/api/ring/simulate",
+        data=b"{}",
+        headers={"content-type": "application/json"},
+        method="POST",
+    )
+    started = time.monotonic()
+    with urllib.request.urlopen(warm, timeout=120) as r:
+        r.read()
+    print(f"ring proof warmed in {time.monotonic() - started:.1f}s")
 
 
 # --------------------------------------------------------------------------
@@ -453,16 +544,102 @@ def act_app_streak(r: Recorder):
     r.point_at("text=undisturbed in total")
 
 
-def act_evidence(r: Recorder):
+# The send button by its text, not by `#ring button`. The heading holds an
+# InfoButton, which is also a button and comes first in document order, so
+# the bare selector pointed at the tooltip and the deliveries were never
+# sent. Both labels the real button can carry start with "Send"; the info
+# control never does.
+RING_SEND = '#ring button:has-text("Send")'
+
+# The status pill on each connect step: three read "Live endpoint", the
+# first reads "Needs Ring certification".
+STEP_BADGE = "#ring-steps > li span.rounded-full"
+
+
+def act_ring_proof(r: Recorder):
+    """The Ring integration, shown rather than claimed.
+
+    The rules require the video to show the project working through a
+    Ring simulator or device. Everything before this beat asserted it. This
+    presses the button on the site that performs three real signed
+    deliveries to the live endpoint, waits for the production route's three
+    verdicts to arrive, and points at each as its sentence is spoken.
+    """
     # Back to the landing page by pressing the wordmark, not by a scripted
-    # jump to a URL. The chip follows the route back.
+    # jump to a URL. The address bar follows the route back. The caregiver
+    # app renders its header only after it has data, so this is the
+    # wordmark by position: it is the header's only link.
     r.page.evaluate(SMOOTH_SCROLL_JS, [0, 20])
     r.page.wait_for_timeout(160)
-    # The caregiver app renders its header only after it has data, so this
-    # is the wordmark by position within the header rather than by an href
-    # that is absent from the exported HTML. It is the header's only link.
     r.click_at("header a")
     r.page.wait_for_selector(".night-mark", timeout=60_000)
+    r.scroll_to("#ring h2", offset=190)
+    # Warm the route from the page before the line starts. Still silent,
+    # still cut; the press a viewer sees is a real one against a warm
+    # container rather than a real one against a cold one.
+    r.warm(f"{API}/api/ring/simulate")
+    r.hold(0.3)
+    r.point_at(RING_SEND)
+    yield
+    # The press happens under the line, not before it. On Lambda the three
+    # deliveries take close to five seconds, because the sandbox replays a
+    # month of events on a small CPU before it can judge 3am. Pressed before
+    # the beat mark, that wait sat between two lines and the assembler cut
+    # it as dead air, leaving a click that produced three rows instantly,
+    # which is a jump cut in the middle of the one action the beat exists
+    # to show. Pressed here, the wait plays under "This is the Ring Partner
+    # API. Three signed Ring webhooks." and the rows arrive as the first
+    # verdict is spoken. Nothing is sped up; the wait is simply narrated.
+    r.click_at(RING_SEND, settle=0.3)
+    # Wait for the third verdict, not for the spinner to look done. Race it
+    # against the panel's own error state, so a failed delivery fails the
+    # take in a second with a reason, rather than sitting on a spinner for
+    # a minute and then failing without one.
+    rows = r.page.locator("#ring ol > li:nth-child(3)")
+    failed = r.page.locator("#ring p:has-text('could not be reached')")
+    rows.or_(failed).first.wait_for(state="visible", timeout=60_000)
+    if failed.count():
+        raise SystemExit(f"Ring proof failed on the live site: {failed.first.inner_text()}")
+    r.page.wait_for_timeout(250)
+    # Rows sit below the heading; bring the first into the upper half. At
+    # 230 the third row's bottom edge landed five pixels above the caption
+    # band, which is not a margin, it is luck.
+    r.scroll_to("#ring ol", offset=200)
+    r.on_sentence(2)                 # "A real doorbell event at three in the morning, accepted."
+    r.point_at("#ring ol > li", nth=0)
+    r.on_sentence(3)                 # "Tampered in transit, rejected."
+    r.point_at("#ring ol > li", nth=1)
+    r.on_sentence(4)                 # "Ring retrying the first, ignored."
+    r.point_at("#ring ol > li", nth=2)
+
+
+def act_ring_connect(r: Recorder):
+    """How a family connects their own doorbell.
+
+    The badges are the shot. Three say "Live endpoint" and one says "Needs
+    Ring certification", and the beat ends on that one, because a judge
+    trusts a team that knows where its product stops more than one that
+    implies it is finished.
+
+    Pointing at the badges rather than at the list items: a step card is
+    tall enough that `scroll_into_view_if_needed` would scroll the page
+    mid-sentence to centre it, and a shot that moves while a line is being
+    spoken reads as a mistake.
+    """
+    r.scroll_to("#ring-connect h3", offset=110)
+    r.hold(0.3)
+    yield
+    r.on_sentence(1)                 # "Three of these four steps are live right now."
+    r.point_at(STEP_BADGE, nth=1)
+    r.hold(1.1)
+    r.point_at(STEP_BADGE, nth=3)
+    r.on_sentence(2)                 # "The fourth is Ring's certification."
+    r.point_at(STEP_BADGE, nth=0)
+
+
+def act_evidence(r: Recorder):
+    # Already on the landing page after the Ring beat; the proof section
+    # sits above it, so this is one eased scroll upward.
     # The comparison cards, not the proof banner. The banner states 94.5
     # percent in running text, which on a 1080p frame is small print with a
     # caption across it; these are the same three numbers at display size,
@@ -510,6 +687,8 @@ ACTIONS = {
     "app_escalation": act_app_escalation,
     "app_voice": act_app_voice,
     "app_streak": act_app_streak,
+    "ring_proof": act_ring_proof,
+    "ring_connect": act_ring_connect,
     "evidence": act_evidence,
     "evidence_cost": act_evidence_cost,
     "landing_strip_final": act_landing_strip_final,
@@ -563,7 +742,7 @@ def main() -> int:
         # that runs before the real document arrives is discarded with it.
         page.add_init_script(
             "document.addEventListener('DOMContentLoaded', () => {"
-            + CURSOR_JS + URL_BAR_JS + "});"
+            + NATIVE_SCROLL_OFF_JS + CURSOR_JS + URL_BAR_JS + "});"
         )
 
         # Open the live site before the clock starts, so the first frame of
@@ -579,6 +758,14 @@ def main() -> int:
         for beat in BEATS:
             if beat.pause_before:
                 r.hold(beat.pause_before)
+            # Hold for the line Polly actually produced, not the estimate.
+            # The estimate ran two seconds short on the Ring beat, so the
+            # picture scrolled away to the evidence while "the voice never
+            # plays twice" was still being said. The real lengths are on
+            # disk from narrate.py; the recorder was already using them to
+            # time the cursor and then ignoring them to time the shot.
+            line = narration.get(beat.key, beat.speak_seconds)
+            budget = max(beat.pause_before + line, beat.min_hold)
             steps = ACTIONS[beat.action](r)
             if hasattr(steps, "__next__"):
                 # Compose the shot in silence, mark the beat, then let the
@@ -592,7 +779,7 @@ def main() -> int:
             else:
                 r.mark(beat)
                 spent = 0.0
-            r.hold(max(0.0, beat.budget - beat.pause_before - spent))
+            r.hold(max(0.0, budget - beat.pause_before - spent))
 
         total = time.monotonic() - started
         context.close()

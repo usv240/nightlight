@@ -37,9 +37,10 @@ from beats import BEATS
 OUT = Path(__file__).parent / "build"
 # Seconds a beat may hold after its line ends. Two was comfortable until
 # the script grew by a beat; at 2:56 against a hard 3:00 ceiling the margin
-# was thinner than YouTube duration rounding. This removes settled screen
-# only. Nothing is ever sped up.
-SLACK = 1.3
+# was thinner than YouTube duration rounding, and a thirteenth beat for the
+# Ring proof took it to one, and a fourteenth for the connect flow took it
+# to 0.8. This removes settled screen only. Nothing is ever sped up.
+SLACK = 0.8
 TAIL_KEEP = 1.6      # seconds held after the very last word
 
 

@@ -28,8 +28,8 @@ carrying it.
 |---|---|---|
 | Quality of the idea | 0:00 | Gentler first. Wake someone only if that fails. |
 | Design | 0:20 | Thirty nights, mostly quiet. The row is the product. |
-| Tech implementation | 0:38 | The story happens, then: it went through the real signed pipeline. |
-| Potential impact | 1:45 | 2,936 real nights, and the honest cost of the restraint. |
+| Tech implementation | 1:45 | Three signed Ring webhooks sent live, and the two that are refused. |
+| Potential impact | 2:05 | How a family connects their own, then 2,936 real nights and the honest cost. |
 
 ## Before you record
 
@@ -120,7 +120,7 @@ plumbing.
 
 Now, and only now, the technical claim, in one sentence:
 
-> **"Not a shortcut built for the demo: it went through the same signed Ring webhook pipeline as a live event."**
+_(The sentence that used to sit here, claiming the event went through the signed Ring pipeline, has moved. It is no longer said; it is shown, in the Ring beat below.)_
 
 **Point at:** the `2026-09-12` line, the only one marked WOKEN.
 
@@ -162,6 +162,66 @@ Read this slowly.
 > **"This is the message a family records. Dad, it is night time. Come back inside. I will see you in the morning."**
 
 ---
+
+## 1:45 to 2:05 Ring, shown rather than claimed
+
+The rules require the video to show the project working through a Ring
+simulator or device. Everything before this point asserted it. This beat
+presses the thing that proves it.
+
+**Navigate:** click the Nightlight wordmark to return to the landing page,
+then the **Ring** link in the nav. Scroll so the heading "Built on Ring,
+and you can check that from here" sits just under the header.
+
+**Point at** the Ring Partner API badge, then press **Send three Ring
+deliveries**. Wait for all three rows. It takes about a second: the
+deliveries go over a real socket and the sandbox replays a month first.
+
+> **"This is the Ring Partner API. Three signed Ring webhooks."**
+
+**Point at row 1** (green, 200 Accepted) as you say:
+
+> **"A real 3am doorway event, accepted."**
+
+**Point at row 2** (red, 401 Rejected):
+
+> **"Tampered in transit, rejected."**
+
+**Point at row 3** (amber, 200 Ignored as duplicate):
+
+> **"Ring retrying the first, ignored. The voice never plays twice."**
+
+The two refusals are the point. A success proves nothing on its own.
+What a family is trusting is that a forged delivery cannot play audio
+into their home at 3am, and that a retry cannot play it twice.
+
+Do not open "The envelope Ring sends". It is there for a reader, and on
+camera it is a wall of JSON.
+
+## 2:05 to 2:15 How a family gets it
+
+Still in the **Ring** section. Scroll down to **Connecting your own Ring
+doorbell**, so the heading and all four steps are on screen at once.
+
+**Point at** the status pill on step 2, then step 4. Both read **Live
+endpoint**.
+
+> **"And this is how a family connects their own doorbell. Three of these four steps are live right now."**
+
+**Point at** step 1's pill, which reads **Needs Ring certification**, and
+end the beat there.
+
+> **"The fourth is Ring's certification."**
+
+Ending on the step that is not ours is deliberate, not an apology. Ring's
+account linking begins in the Ring Appstore, so it is genuinely not ours
+to finish, and saying so is a stronger position than implying the product
+is complete. It also lands on the empty elderly-care category the
+submission opens with.
+
+Do not press **Check three link requests** on camera. It is there for a
+judge who explores the site, and the webhook proof has already carried
+the security argument.
 
 ## 1:45 to 2:15 The evidence
 

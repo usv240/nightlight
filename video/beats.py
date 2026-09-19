@@ -89,9 +89,9 @@ BEATS: list[Beat] = [
         pause_before=0.4,
         say=(
             "It is three in the morning. Someone living with dementia opens "
-            "the front door. Every door alarm on the market answers that the "
-            "same way: it wakes the person caring for them. Night after "
-            "night, until they cannot do it any more."
+            "the front door. Every door alarm answers the same way: it wakes "
+            "the person caring for them, night after night, until they cannot "
+            "do it any more."
         ),
         note=(
             "The problem first, over the live site. Opening on a blank "
@@ -107,7 +107,7 @@ BEATS: list[Beat] = [
         say=(
             "Nightlight tries something gentler first. A familiar recorded "
             "voice, asking them to come back inside. It wakes the caregiver "
-            "only if that does not work."
+            "only if that fails."
         ),
         note="The product, named once, after the problem has landed.",
     ),
@@ -117,7 +117,7 @@ BEATS: list[Beat] = [
         pause_before=0.5,
         min_hold=15.0,
         say=(
-            "This is a month in one household. Every mark is a night. Amber "
+            "A month in one household. Every mark is a night. Amber "
             "means the voice settled it and nobody was woken. Red means it "
             "did not, and the caregiver was woken. Twenty-nine of thirty "
             "nights slept through."
@@ -132,16 +132,15 @@ BEATS: list[Beat] = [
         action="app_open",
         pause_before=0.6,
         say=(
-            "Here is one of those nights, from the caregiver's app, live "
-            "against the deployed service. Twenty to three in the morning, "
-            "the door opened outside this household's pattern. The recorded "
-            "voice played at the chime, the person came back inside, and "
-            "nobody was woken. And none of it is staged: every event went "
-            "through the same signed Ring webhook pipeline as a live one."
+            "Here is one of those nights, from the caregiver's app. "
+            "Twenty to three in the morning, the door opened outside this "
+            "household's pattern. The voice played, the person came back "
+            "inside, nobody woken."
         ),
         note=(
-            "The story of a single night, in the order a family lives it, "
-            "and only then the one sentence that says it was real."
+            "The story of a single night, in the order a family lives it. "
+            "The sentence that used to claim it was real is gone: the ring "
+            "beat now shows it instead."
         ),
     ),
     Beat(
@@ -150,8 +149,7 @@ BEATS: list[Beat] = [
         pause_before=0.5,
         say=(
             "And the night it did not work. Five past three, the activity "
-            "kept going, so the caregiver was woken. That is the red mark. "
-            "It never fails silently."
+            "kept going, so the caregiver was woken. It never fails silently."
         ),
         note=(
             "The second half of the sentence a judge should remember. "
@@ -176,7 +174,7 @@ BEATS: list[Beat] = [
         action="app_streak",
         pause_before=0.5,
         say=(
-            "And this is the only number on the page. Eighteen nights slept "
+            "Eighteen nights slept "
             "in a row, twenty-nine of the last thirty in total. Not "
             "incidents detected. Nights nobody was woken."
         ),
@@ -186,11 +184,43 @@ BEATS: list[Beat] = [
         ),
     ),
     Beat(
+        key="ring",
+        action="ring_proof",
+        pause_before=0.5,
+        say=(
+            "This is the Ring Partner API. Three signed Ring webhooks. A real "
+            "3am doorway event, accepted. Tampered in transit, rejected. Ring "
+            "retrying the first, ignored. The voice never plays twice."
+        ),
+        note=(
+            "The rules require the video to show the project working through "
+            "Ring, not to say so. Three real deliveries to the live endpoint, "
+            "and the two failures are the ones that make the success mean "
+            "anything."
+        ),
+    ),
+    Beat(
+        key="connect",
+        action="ring_connect",
+        pause_before=0.5,
+        say=(
+            "And this is how a family connects their own doorbell. Three of "
+            "these four steps are live right now. The fourth is Ring's "
+            "certification."
+        ),
+        note=(
+            "The question a family asks before any of the others: how do I "
+            "get this. Ending on the step that is not ours is deliberate. A "
+            "judge trusts a team that knows exactly where its product stops "
+            "more than one that implies it is finished."
+        ),
+    ),
+    Beat(
         key="evidence",
         action="evidence",
         pause_before=0.6,
         say=(
-            "Measured on thirty-four real homes we did not collect. A "
+            "Thirty-four real homes we did not collect. A "
             "standard alarm would have woken the caregiver fourteen thousand "
             "times. Nightlight woke them seven hundred and seventy-four."
         ),
@@ -201,8 +231,7 @@ BEATS: list[Beat] = [
         action="evidence_cost",
         pause_before=0.4,
         say=(
-            "And what that cost, because waking someone less often is easy "
-            "if you simply stop noticing. Of thirty-four labelled "
+            "And what that cost. Of thirty-four labelled "
             "night exits it flagged seven, and twenty-six of the twenty-"
             "seven it missed, the resident came back within half an hour."
         ),
@@ -252,7 +281,11 @@ BEATS: list[Beat] = [
 # --------------------------------------------------------------------------
 
 def sentences(line: str) -> list[str]:
-    parts = re.split(r"(?<=[.!?])\s+", line.strip())
+    # Not after "a.m." or "p.m.": a script once read "three a.m. doorbell"
+    # and the split put "A real three a.m." on its own cue and moved every
+    # cursor cue after it one sentence early. The recorder and the
+    # subtitler share this function, so they were wrong together.
+    parts = re.split(r"(?<=[.!?])(?<![ap]\.m\.)\s+", line.strip())
     return [p.strip() for p in parts if p.strip()]
 
 

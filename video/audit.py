@@ -101,6 +101,21 @@ def main() -> int:
          "act_app_escalation"),
         ("94.5 percent is shown, not just said",
          "#proof div.grid" in src["record"], "act_evidence"),
+        # The track rule: show the project working through Ring, on camera.
+        ("Ring is shown working, not just named",
+         "ring" in keys and "#ring button" in src["record"]
+         and "ring partner api" in say.lower(),
+         "ring beat presses the live proof"),
+        # Potential impact: the question a family asks before any other.
+        ("how a household connects is shown",
+         "connect" in keys and "#ring-steps" in src["record"]
+         and "connects their own doorbell" in say,
+         "connect beat walks the four steps"),
+        ("the step that is not ours is named",
+         "certification" in say.lower(), "ends on Ring certification"),
+        ("the three Ring verdicts are all spoken",
+         all(w in say.lower() for w in ("accepted", "rejected", "ignored")),
+         "accepted, rejected, ignored"),
         # How it was recorded.
         # Against the beat records, not against the text of beats.py: a
         # note explaining why the blank open was dropped contains the word
