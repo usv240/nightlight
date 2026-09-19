@@ -1,7 +1,7 @@
 import { createHmac } from "node:crypto";
 import { beforeAll, describe, expect, it } from "vitest";
 import { buildServer } from "../src/server";
-import { MCP_PROTOCOL_VERSION } from "../src/mcp";
+import { MCP_PROTOCOL_VERSION, isAllowedOrigin } from "../src/mcp";
 
 /**
  * MCP transport conformance tests against spec revision 2025-11-25:
@@ -281,5 +281,53 @@ describe("MCP session termination from a real client", () => {
     });
     expect(signed.statusCode).toBe(400);
     await app.close();
+  });
+});
+
+/**
+ * Which browsers may hold a session.
+ *
+ * The spec requires Origin validation against DNS rebinding, and
+ * loopback-only was the whole list. That is right for a server on a
+ * laptop and it refused this project's own deployed site with a 403, so
+ * the panel that exists to show the Alexa+ surface working could not
+ * reach it. Agents were never affected, because they send no Origin.
+ */
+describe("origin validation", () => {
+  it("admits loopback, the way a local server must", () => {
+    for (const o of ["http://localhost:3000", "http://127.0.0.1:8787", "http://[::1]:8080"]) {
+      expect(isAllowedOrigin(o), o).toBe(true);
+    }
+  });
+
+  it("admits the deployed site, so its own panel can hold a session", () => {
+    expect(isAllowedOrigin("https://d28hskpupjctiz.cloudfront.net")).toBe(true);
+    expect(isAllowedOrigin("https://d28hskpupjctiz.cloudfront.net/")).toBe(true);
+  });
+
+  it("refuses everything else, including names built to look allowed", () => {
+    // The suffix cases are what a careless startsWith or an unanchored
+    // regular expression would wave through.
+    for (const o of [
+      "https://example.com",
+      "https://d28hskpupjctiz.cloudfront.net.evil.com",
+      "http://localhost.evil.com",
+      "not a url",
+    ]) {
+      expect(isAllowedOrigin(o), o).toBe(false);
+    }
+  });
+
+  it("admits extra origins only when they are named", () => {
+    const saved = process.env.NIGHTLIGHT_ALLOWED_ORIGINS;
+    try {
+      expect(isAllowedOrigin("https://preview.example.org")).toBe(false);
+      process.env.NIGHTLIGHT_ALLOWED_ORIGINS = "https://preview.example.org";
+      expect(isAllowedOrigin("https://preview.example.org")).toBe(true);
+      expect(isAllowedOrigin("https://unnamed.example")).toBe(false);
+    } finally {
+      if (saved === undefined) delete process.env.NIGHTLIGHT_ALLOWED_ORIGINS;
+      else process.env.NIGHTLIGHT_ALLOWED_ORIGINS = saved;
+    }
   });
 });

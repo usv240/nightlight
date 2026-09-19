@@ -1,3 +1,4 @@
+import { McpProof } from "../components/McpProof";
 import { RingConnect } from "../components/RingConnect";
 import { RingDeliveryProof } from "../components/RingDeliveryProof";
 import Link from "next/link";
@@ -436,6 +437,23 @@ export default function Home() {
         </div>
       </section>
 
+      {/* The Alexa+ surface, shown rather than claimed */}
+      <section id="alexa" className="mx-auto max-w-[1120px] px-4 py-20 sm:px-6">
+        <h2 className="text-3xl font-semibold tracking-tight sm:text-4xl">
+          Ask Alexa how the night went.
+        </h2>
+        <p className="mt-4 max-w-[760px] leading-relaxed text-muted">
+          The same household that answers the caregiver app answers an
+          assistant, through a Model Context Protocol server on spec
+          2025-11-25 over Streamable HTTP. Five tools, read-only except for
+          acknowledging an incident, so a caregiver can say &ldquo;I have
+          it&rdquo; without finding their phone in the dark.
+        </p>
+        <div className="mt-10">
+          <McpProof />
+        </div>
+      </section>
+
       {/* Evidence */}
       <section id="evidence" className="mx-auto max-w-[1120px] px-4 py-20 sm:px-6">
         <h2 className="text-3xl font-semibold tracking-tight sm:text-4xl">
@@ -506,8 +524,16 @@ export default function Home() {
 
       {/* Developers and judges */}
       <section id="developers" className="mx-auto max-w-[1120px] px-4 py-20 sm:px-6">
+        {/*
+          min-w-0 on the grid child, which is the fix for a real bug on the
+          live site: a grid item's default minimum width is its content, so
+          the long curl command below stretched this column to 408px inside
+          a 390px phone and gave the whole page sideways scroll. The pre
+          already scrolls on its own; it just needed permission to be
+          narrower than its longest line.
+        */}
         <div className="grid gap-10 md:grid-cols-2">
-          <div>
+          <div className="min-w-0">
             <h2 className="text-2xl font-semibold tracking-tight">For developers</h2>
             <p className="mt-3 text-sm leading-relaxed text-muted">
               The night-pattern engine is available as an API: send a stream of
@@ -534,7 +560,7 @@ curl http://127.0.0.1:8787/api/summary`}
             <ul className="mt-3 space-y-2 text-sm leading-relaxed text-muted">
               <li>Ring track entry, Build Ship Shape: Amazon Developer Hackathon</li>
               <li>AWS Builder and Open Source mini challenges</li>
-              <li>Deterministic, unit-tested detection: 148 tests across engine, webhook intake, simulator, and the HTTP path</li>
+              <li>Deterministic, unit-tested detection: 152 tests across engine, webhook intake, simulator, and the HTTP path</li>
               <li>Every demo runs the production engine; simulated data is always labeled</li>
               <li>A running friction log ships in the repository as feedback to the Ring team</li>
             </ul>

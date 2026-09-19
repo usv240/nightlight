@@ -26,8 +26,8 @@ import type { HouseholdRuntime } from "./household";
  *   the client must re-initialize.
  * - MCP-Protocol-Version: required to match a supported revision when
  *   present; a request with an unsupported version gets 400.
- * - Origin: when present it must be a loopback origin, otherwise 403,
- *   per the spec's DNS-rebinding guidance. Server binds to 127.0.0.1.
+ * - Origin: when present it must be loopback or an explicitly named
+ *   origin, otherwise 403, per the spec's DNS-rebinding guidance.
  */
 
 export const MCP_PROTOCOL_VERSION = "2025-11-25";
@@ -127,13 +127,44 @@ function textContent(payload: unknown): Record<string, unknown> {
   };
 }
 
-function isLoopbackOrigin(origin: string): boolean {
+/**
+ * Which browser origins may hold a session.
+ *
+ * The spec requires servers to validate Origin, because a server bound to
+ * loopback can otherwise be driven by any web page through DNS rebinding.
+ * Loopback-only is the right answer for a server on a developer's own
+ * machine, and it was the only answer here.
+ *
+ * This server is also deployed publicly, and its own site now holds a
+ * session with it from the browser to show the Alexa+ integration
+ * working. Loopback-only refused that site with a 403 while every agent
+ * kept working, because agents send no Origin at all. The sibling
+ * EveryWord project found this by pressing its own panel; this server had
+ * the same rule and no panel to reveal it.
+ *
+ * So the list is loopback plus explicitly named origins: the deployed
+ * site by default, and whatever NIGHTLIGHT_ALLOWED_ORIGINS adds. Anything
+ * else is still refused, including names built to look allowed. A request
+ * with no Origin header is not a browser and is not subject to this
+ * check, which is how agents connect.
+ */
+const SITE_ORIGIN = "https://d28hskpupjctiz.cloudfront.net";
+
+export function isAllowedOrigin(origin: string): boolean {
   try {
     const u = new URL(origin);
-    return u.hostname === "127.0.0.1" || u.hostname === "localhost" || u.hostname === "[::1]";
+    if (u.hostname === "127.0.0.1" || u.hostname === "localhost" || u.hostname === "[::1]") {
+      return true;
+    }
   } catch {
     return false;
   }
+  const named = new Set(
+    [SITE_ORIGIN, ...(process.env.NIGHTLIGHT_ALLOWED_ORIGINS ?? "").split(",")]
+      .map((o) => o.trim().replace(/\/$/, ""))
+      .filter(Boolean),
+  );
+  return named.has(origin.replace(/\/$/, ""));
 }
 
 export function registerMcp(
@@ -144,7 +175,7 @@ export function registerMcp(
 
   const checkOrigin = (req: FastifyRequest, reply: FastifyReply): boolean => {
     const origin = req.headers.origin;
-    if (origin && !isLoopbackOrigin(origin)) {
+    if (origin && !isAllowedOrigin(origin)) {
       reply.code(403).send(rpcError(null, -32000, "Origin not allowed"));
       return false;
     }

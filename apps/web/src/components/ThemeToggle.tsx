@@ -46,7 +46,7 @@ export function ThemeToggle() {
       type="button"
       onClick={cycle}
       aria-label={`${LABEL[mode]}. Activate to change.`}
-      className="rounded-[var(--radius-sm)] border border-line bg-surface px-3 py-1.5 text-xs font-medium text-muted transition-colors hover:border-primary hover:text-primary"
+      className="whitespace-nowrap rounded-[var(--radius-sm)] border border-line bg-surface px-3 py-1.5 text-xs font-medium text-muted transition-colors hover:border-primary hover:text-primary"
     >
       {LABEL[mode]}
     </button>
