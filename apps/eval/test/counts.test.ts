@@ -21,7 +21,19 @@ const repo = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../.
  * submission is a claim, and claims are maintained.
  */
 
-const PUBLIC_TEXT = ["README.md", "docs/SUBMISSION.md"].flatMap((f) => {
+/*
+  The live site counts as public text.
+
+  The first version of this suite read the two markdown files and nothing
+  else, and the developers section of the landing page sat on production
+  saying "47 tests" while the suite had 147. A judge reads the page before
+  they read the repository, so the page is the claim that matters most.
+*/
+const PUBLIC_TEXT = [
+  "README.md",
+  "docs/SUBMISSION.md",
+  "apps/web/src/app/page.tsx",
+].flatMap((f) => {
   const p = path.join(repo, f);
   return fs.existsSync(p) ? [{ file: f, text: fs.readFileSync(p, "utf8") }] : [];
 });
@@ -101,7 +113,8 @@ describe("published counts match the repository", () => {
     // a claim that undershoots reality is the failure mode worth catching:
     // "116 tests" beside a suite of 141 reads as a number nobody checked.
     const stated = PUBLIC_TEXT.flatMap((d) => {
-      const m = d.text.match(/(\d+) tests total/);
+      // "147 tests total" in prose, or "147 tests across ..." on the page.
+      const m = d.text.match(/(\d+) tests total/) ?? d.text.match(/(\d+) tests across/);
       return m ? [{ file: d.file, n: Number(m[1]) }] : [];
     });
     expect(stated.length).toBeGreaterThan(0);

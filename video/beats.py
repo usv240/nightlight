@@ -117,10 +117,10 @@ BEATS: list[Beat] = [
         pause_before=0.5,
         min_hold=15.0,
         say=(
-            "A month in one household. Every mark is a night. Amber "
-            "means the voice settled it and nobody was woken. Red means it "
-            "did not, and the caregiver was woken. Twenty-nine of thirty "
-            "nights slept through."
+            "A month in one household. Every mark is a night. Amber: the "
+            "voice settled it, nobody woken. Red: it did not, and the "
+            "caregiver was woken. Twenty-nine of thirty nights slept "
+            "through."
         ),
         note=(
             "The visual argument. Held long enough to rest on each legend "
@@ -132,7 +132,7 @@ BEATS: list[Beat] = [
         action="app_open",
         pause_before=0.6,
         say=(
-            "Here is one of those nights, from the caregiver's app. "
+            "Here is one of those nights. "
             "Twenty to three in the morning, the door opened outside this "
             "household's pattern. The voice played, the person came back "
             "inside, nobody woken."
@@ -238,6 +238,24 @@ BEATS: list[Beat] = [
         note=(
             "The uncomfortable number. It is what makes the others "
             "believable rather than merely impressive."
+        ),
+    ),
+    Beat(
+        key="depth",
+        action="page_depth",
+        pause_before=0.5,
+        say=(
+            "Every claim here has its reasoning. Nightlight never stores "
+            "video, audio, location, or identity data. The Ring API offers "
+            "none, and we want none."
+        ),
+        note=(
+            "The page is deeper than the six shots before this, and a judge "
+            "who never scrolls will not know. This travels through the "
+            "research, the ladder and the browser demo, then rests on the "
+            "list of things the product refuses to hold, which is the "
+            "strongest thing on the page for a product that lives in "
+            "somebody's home."
         ),
     ),
     Beat(

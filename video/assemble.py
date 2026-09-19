@@ -39,7 +39,9 @@ OUT = Path(__file__).parent / "build"
 # the script grew by a beat; at 2:56 against a hard 3:00 ceiling the margin
 # was thinner than YouTube duration rounding, and a thirteenth beat for the
 # Ring proof took it to one, and a fourteenth for the connect flow took it
-# to 0.8. This removes settled screen only. Nothing is ever sped up.
+# to 0.8, where a fifteenth beat keeps it. Reading at 95 rather than 87
+# is what made that beat affordable at all. This removes settled screen
+# only. Nothing is ever sped up.
 SLACK = 0.8
 TAIL_KEEP = 1.6      # seconds held after the very last word
 

@@ -13,8 +13,12 @@ Patrick reads warmer and slightly higher than Gregory, which suits a
 script about somebody's family rather than about a system. The generative
 engine has other male voices, Matthew and Stephen, but it ignores
 `prosody rate`, so the pacing below would be lost.
-The rate is 87 percent because the default pace reads as an advertisement
-and this is a video about somebody's exhausted parent.
+The rate is 95 percent. The default pace reads as an advertisement and
+this is a video about somebody's exhausted parent, so it is slowed. 87
+was the first choice and read as laboured on review; 92 fixed the feel
+but bought only nine seconds, and a fifteenth beat costs thirteen. 95 is
+still eight percent under the default, and it is what lets the video show
+the page rather than only six shots of it.
 
 SSML rather than plain text, so the rate applies to the whole line and
 punctuation is respected rather than guessed at.
@@ -35,7 +39,7 @@ AUDIO = OUT / "audio"
 REGION = "us-east-1"
 VOICE = "Patrick"
 ENGINE = "long-form"
-RATE = "87%"
+RATE = "95%"
 
 
 def ssml(line: str) -> str:

@@ -668,6 +668,36 @@ def act_evidence_cost(r: Recorder) -> None:
     r.point_at("text=And what that restraint cost")
 
 
+def act_page_depth(r: Recorder):
+    """Travel through the page a judge would otherwise never see.
+
+    Six shots before this one all live in three sections. The page has
+    nine, and the ones that are skipped carry the research, the response
+    ladder, a month anyone can replay in their own browser, and the list
+    of things the product refuses to store. A judge who does not scroll
+    has no way to know any of it is there.
+
+    So this scrolls rather than cuts, and rests twice on the way down, at
+    roughly reading pace. The destination is the privacy list, because for
+    a product that lives in somebody's home the refusals are a stronger
+    argument than any of the features above them.
+    """
+    r.scroll_to("text=The most dangerous door", offset=190)
+    r.hold(0.3)
+    yield
+    # Under sentence 0: the research, then the ladder.
+    r.hold(1.6)
+    r.scroll_to("text=Voice first. Caregiver second", offset=190)
+    r.hold(1.8)
+    r.scroll_to("text=A month of nights", offset=190)
+    r.on_sentence(1)                 # "Nightlight never stores..."
+    r.scroll_to("text=Nightlight never stores", offset=210)
+    r.hold(0.5)
+    r.point_at("text=Nightlight never stores")
+    r.on_sentence(2)                 # "The Ring API offers none..."
+    r.point_at("text=Facial or identity data")
+
+
 def act_landing_strip_final(r: Recorder) -> None:
     r.page.evaluate(SMOOTH_SCROLL_JS, [0, 26])
     r.page.wait_for_timeout(240)
@@ -691,6 +721,7 @@ ACTIONS = {
     "ring_connect": act_ring_connect,
     "evidence": act_evidence,
     "evidence_cost": act_evidence_cost,
+    "page_depth": act_page_depth,
     "landing_strip_final": act_landing_strip_final,
     "hold": act_hold,
 }

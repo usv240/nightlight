@@ -15,6 +15,24 @@ import { defineConfig } from "vitest/config";
  */
 export default defineConfig({
   test: {
+    /*
+      Ten seconds, not vitest's default five.
+
+      Several suites here replay the whole demo month through the real
+      webhook route, and two of them now stand up a Fastify server on a
+      real socket to send signed Ring deliveries. Any one of those is
+      comfortably under a second alone. Run in parallel on a loaded
+      machine they are not, and the replay idempotency suite timed out at
+      5011ms in a full run while passing in isolation and in three full
+      runs after it.
+
+      That suite guards the bug that once broke the live demo, so a flake
+      there is worse than a slow test: it teaches whoever sees it that a
+      red run means nothing. The work is genuinely a few seconds, so the
+      limit is raised to match rather than the tests being made to do
+      less.
+    */
+    testTimeout: 10_000,
     include: [
       "apps/backend/test/**/*.test.ts",
       "apps/web/test/**/*.test.ts",

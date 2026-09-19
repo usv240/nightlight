@@ -111,6 +111,13 @@ def main() -> int:
          "connect" in keys and "#ring-steps" in src["record"]
          and "connects their own doorbell" in say,
          "connect beat walks the four steps"),
+        # Design and Quality of the Idea: the refusals, which are the
+        # strongest thing on the page for a product that lives in a home.
+        ("the page is shown beyond the three shot sections",
+         "depth" in keys and "page_depth" in src["record"],
+         "depth beat travels the page"),
+        ("what the product refuses to store is said out loud",
+         "never stores video" in say, "privacy beat"),
         ("the step that is not ours is named",
          "certification" in say.lower(), "ends on Ring certification"),
         ("the three Ring verdicts are all spoken",
