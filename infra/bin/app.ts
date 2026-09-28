@@ -64,6 +64,19 @@ class NightlightStack extends Stack {
       memorySize: 512,
       timeout: Duration.seconds(30),
       environment: {
+        /*
+          The live site's own origin, handed in by the stack that knows
+          it, so the allowlist follows the distribution instead of a
+          constant in the source.
+
+          SITE_ORIGIN in mcp.ts stays as a fallback and is now only that.
+          A hardcoded domain works until the distribution is replaced,
+          and then fails in the one way nothing tests for: every agent
+          keeps working, because agents send no Origin header at all,
+          and only the browser panel that exists to demonstrate the
+          integration gets a 403.
+        */
+        NIGHTLIGHT_ALLOWED_ORIGINS: siteUrl,
         DYNAMO_TABLE: table.tableName,
         NIGHTLIGHT_BEDROCK: "1",
         BEDROCK_MODEL_ID: process.env.BEDROCK_MODEL_ID ?? "us.anthropic.claude-sonnet-4-5-20250929-v1:0",

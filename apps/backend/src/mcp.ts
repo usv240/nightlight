@@ -148,6 +148,17 @@ function textContent(payload: unknown): Record<string, unknown> {
  * with no Origin header is not a browser and is not subject to this
  * check, which is how agents connect.
  */
+/*
+  The deployed site's origin now arrives from the stack, in
+  <PROJECT>_ALLOWED_ORIGINS, so the allowlist follows the distribution.
+
+  The constant below is a fallback and nothing more. A hardcoded domain
+  works until the distribution is replaced, and then fails in the one
+  way nothing tests for: every agent keeps working, because agents send
+  no Origin header at all, and only the browser panel that exists to
+  demonstrate the integration gets a 403. A sibling was built without
+  the constant for exactly this reason.
+*/
 const SITE_ORIGIN = "https://d28hskpupjctiz.cloudfront.net";
 
 export function isAllowedOrigin(origin: string): boolean {
