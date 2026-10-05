@@ -74,4 +74,14 @@ Format per entry: task attempted, steps taken, expected vs actual, severity (low
 - Workaround: the parser reports a parse failure as data and each route decides what it means. The MCP route returns -32700 with a 400; the Ring webhook route rejects on signature first and then on shape. Pinned by two tests, and the probe re-checks it against the live server.
 - Why it is in this log: it is the second time this hackathon that the gap between an injected request and a real one hid a live defect, the first being a DELETE with a JSON content-type and an empty body. Recorded so the pattern is named: any claim about a deployed endpoint needs one check that actually crosses the network.
 
+## Entry 8: two of our three Bedrock fallback models reached end of life, and nothing told us (2026-10-05)
+
+- Task: re-check, three weeks before the deadline, that the morning note's model ladder still has three working rungs.
+- Steps: changed `apps/backend/scripts/bedrock-check.mts` to invoke every rung of the ladder rather than one model, and ran it against the deployed configuration.
+- Expected: three of three, as on 2026-09-14 when the ladder was built.
+- Actual: one of three. `us.anthropic.claude-3-5-sonnet-20241022-v2:0` and `us.anthropic.claude-3-5-haiku-20241022-v1:0` both answered 404 "This model version has reached the end of its life". The live note never degraded, because rung one (Sonnet 4.5) kept answering, which is exactly why nobody saw it: a fallback is only exercised when it is needed. The same probe found that `us.anthropic.claude-sonnet-4-6` now invokes on this account, which it did not when entry 5 was written.
+- Severity: medium. Nothing a caregiver saw changed, but the resilience the documentation claimed was not there, and `/api/resilience` listed two models that could not answer.
+- Workaround: the ladder is now Sonnet 4.6, Sonnet 4.5, Haiku 4.5, probed three of three; a test pins that the default ladder contains neither retired id; the probe with no argument checks every rung in one command.
+- Suggestion: Bedrock knows which model ids each account has invoked. A deprecation notice to accounts with recent traffic to a model, and a `lifecycleStatus` of LEGACY surfaced in `get-foundation-model-availability` (the call entry 5 already asks to carry the allowlist gate), would turn this from a 404 found by probing into a date on a calendar.
+
 <!-- Add new entries above this line as they happen. -->

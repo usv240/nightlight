@@ -15,13 +15,13 @@ the point is to prove the calls happened rather than to publish a home.
 
 | Call | Endpoint | Result |
 |---|---|---|
-| Account | `GET /v1/accounts/me` | answered |
+| Account | `GET /v1/users/me` | answered |
 | Devices | `GET /v1/devices` | answered |
-| Event history | `GET /v1/devices/{id}/events` | answered |
+| Event history | `GET /v1/history/devices/{id}/events` | answered |
 
 ## Account
 
-`GET /v1/accounts/me`
+`GET /v1/users/me`
 
 Response shape: `{ data }`
 
@@ -154,7 +154,7 @@ Redacted sample:
 
 ## Event history
 
-`GET /v1/devices/{id}/events`
+`GET /v1/history/devices/{id}/events`
 
 Response shape: `{ data }`
 

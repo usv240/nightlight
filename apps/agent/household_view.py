@@ -73,7 +73,7 @@ from strands.tools.mcp import MCPClient
 
 NIGHTLIGHT_MCP = "https://qdvxx267lgnsitq242aplz722a0zuien.lambda-url.us-east-1.on.aws/mcp"
 BELLWETHER_MCP = "https://bppni6dpuntpbynfydk52gexue0xulzh.lambda-url.us-east-1.on.aws/mcp"
-MODEL_ID = "us.anthropic.claude-sonnet-4-5-20250929-v1:0"
+MODEL_ID = "us.anthropic.claude-sonnet-4-6"
 
 SYSTEM_PROMPT = """You are writing one short note for a family caring for
 someone living with dementia at home. You can see two independent systems.

@@ -5,7 +5,7 @@ The same Week Review agent that runs locally in [`apps/agent`](../agent), deploy
 ```
 Runtime: nightlightweek_weekreview
 Region:  us-east-1
-Model:   us.anthropic.claude-sonnet-4-5-20250929-v1:0
+Model:   us.anthropic.claude-sonnet-4-6
 ```
 
 ## Why host it rather than leave it a script

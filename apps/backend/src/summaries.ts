@@ -16,17 +16,15 @@ import type { NightSummary } from "@nightlight/engine";
  * unverified" every time.
  *
  * Enabled by NIGHTLIGHT_BEDROCK=1 (never in unit tests). Model default is
- * Claude Sonnet 4.5 via a Bedrock inference profile
- * ("us.anthropic.claude-sonnet-4-5-20250929-v1:0"), overridable via
- * BEDROCK_MODEL_ID. This is an availability-forced substitution, not a
+ * Claude Sonnet 4.6 via a Bedrock inference profile
+ * ("us.anthropic.claude-sonnet-4-6"), overridable via BEDROCK_MODEL_ID. This is an availability-forced substitution, not a
  * choice: this AWS account's tier is allowlist-gated out of every
  * current-generation Claude on Bedrock (Opus 5, Opus 4.8/4.7, Sonnet 5
  * all return "not available for this account, contact AWS Sales" even
  * after marketplace agreements are accepted; see FRICTION_LOG.md entry 5).
- * Sonnet 4.5 is the most capable model this account can invoke, and it
- * requires the classic AnthropicBedrock client (InvokeModel path) rather
- * than the Mantle Messages endpoint, and no output_config.effort
- * parameter (unsupported before Claude 4.6). Documented for the AWS
+ * Sonnet 4.6 is the most capable model this account can invoke (probed
+ * again 2026-10-05), through the classic AnthropicBedrock client
+ * (InvokeModel path) rather than the Mantle Messages endpoint. Documented for the AWS
  * Builder mini challenge in docs/AWS.md.
  */
 
@@ -64,9 +62,9 @@ export interface PhraseDeps {
  * beats "warm but unverified".
  */
 const DEFAULT_LADDER = [
+  "us.anthropic.claude-sonnet-4-6",
   "us.anthropic.claude-sonnet-4-5-20250929-v1:0",
-  "us.anthropic.claude-3-5-sonnet-20241022-v2:0",
-  "us.anthropic.claude-3-5-haiku-20241022-v1:0",
+  "us.anthropic.claude-haiku-4-5-20251001-v1:0",
 ];
 
 /**

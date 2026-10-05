@@ -60,30 +60,17 @@ class NightlightStack extends Stack {
 
     const backend = new NodejsFunction(this, "Backend", {
       entry: path.join(here, "../../apps/backend/src/lambda.ts"),
-      runtime: Runtime.NODEJS_20_X,
+      runtime: Runtime.NODEJS_22_X,
       memorySize: 512,
       timeout: Duration.seconds(30),
       environment: {
-        /*
-          The live site's own origin, handed in by the stack that knows
-          it, so the allowlist follows the distribution instead of a
-          constant in the source.
-
-          SITE_ORIGIN in mcp.ts stays as a fallback and is now only that.
-          A hardcoded domain works until the distribution is replaced,
-          and then fails in the one way nothing tests for: every agent
-          keeps working, because agents send no Origin header at all,
-          and only the browser panel that exists to demonstrate the
-          integration gets a 403.
-        */
-        NIGHTLIGHT_ALLOWED_ORIGINS: siteUrl,
         DYNAMO_TABLE: table.tableName,
         NIGHTLIGHT_BEDROCK: "1",
-        BEDROCK_MODEL_ID: process.env.BEDROCK_MODEL_ID ?? "us.anthropic.claude-sonnet-4-5-20250929-v1:0",
+        BEDROCK_MODEL_ID: process.env.BEDROCK_MODEL_ID ?? "us.anthropic.claude-sonnet-4-6",
       },
       bundling: {
         format: OutputFormat.ESM,
-        target: "node20",
+        target: "node22",
         externalModules: ["@aws-sdk/*"],
         // Some transitive dependencies still use require() inside ESM output.
         banner:
@@ -146,10 +133,26 @@ class NightlightStack extends Stack {
       distributionPaths: ["/*"],
     });
 
+    /*
+      The live site's own origin, handed in by the stack that knows it, so
+      the allowlist follows the distribution instead of a constant in the
+      source. Set here rather than in the function's environment block
+      because the distribution is created after the function; written
+      there, it named a variable that did not exist yet and the stack
+      stopped synthesising (2026-09-28 to 2026-10-05, caught by the next
+      deploy).
+
+      SITE_ORIGIN in mcp.ts stays as a fallback and is now only that. A
+      hardcoded domain works until the distribution is replaced, and then
+      fails in the one way nothing tests for: every agent keeps working,
+      because agents send no Origin header at all, and only the browser
+      panel that exists to demonstrate the integration gets a 403.
+    */
+    const siteUrl = `https://${distribution.distributionDomainName}`;
+    backend.addEnvironment("NIGHTLIGHT_ALLOWED_ORIGINS", siteUrl);
+
     new CfnOutput(this, "ApiUrl", { value: fnUrl.url });
-    new CfnOutput(this, "SiteUrl", {
-      value: `https://${distribution.distributionDomainName}`,
-    });
+    new CfnOutput(this, "SiteUrl", { value: siteUrl });
     new CfnOutput(this, "TableName", { value: table.tableName });
   }
 }

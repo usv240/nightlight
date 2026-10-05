@@ -65,7 +65,7 @@ export const INFO: Record<string, InfoEntry> = {
     id: "caregiver-sleep",
     term: "Caregiver sleep",
     plain:
-      "Up to 67 percent of family members caring for someone with dementia have significant sleep problems, compared with up to 50 percent of the general population. Exhaustion, not the disease itself, is what most often ends care at home.",
+      "Up to 67 percent of family members caring for someone with dementia have significant sleep problems, compared with up to 50 percent of the general population.",
     sourceUrl: "https://academic.oup.com/innovateage/article/8/2/igae005/7607770",
     sourceLabel: "Innovation in Aging, scoping review",
   },
@@ -73,9 +73,9 @@ export const INFO: Record<string, InfoEntry> = {
     id: "institutionalization",
     term: "Earlier nursing home admission",
     plain:
-      "Research links disturbed caregiver nights directly to earlier moves into residential care. Protecting the caregiver's sleep protects the family's ability to stay together.",
-    sourceUrl: "https://academic.oup.com/innovateage/article/8/2/igae005/7607770",
-    sourceLabel: "Innovation in Aging, scoping review",
+      "Seventy percent of caregivers who placed a relative in an institution cited nocturnal problems in the decision, often because their own sleep was disrupted. Protecting the caregiver's sleep protects the family's ability to stay together.",
+    sourceUrl: "https://doi.org/10.1177/089198879100400405",
+    sourceLabel: "Pollak and Perlick, J Geriatr Psychiatry Neurol, 1991",
   },
   "care-home-evidence": {
     id: "care-home-evidence",

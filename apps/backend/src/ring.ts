@@ -149,11 +149,46 @@ export class RingClient {
     return this.api(`/v1/history/devices/${encodeURIComponent(deviceId)}/events`);
   }
 
-  downloadSnapshot(deviceId: string): Promise<Record<string, unknown>> {
-    return this.api(`/v1/devices/${encodeURIComponent(deviceId)}/media/image/download`, {
+  deviceStatus(deviceId: string): Promise<Record<string, unknown>> {
+    return this.api(`/v1/devices/${encodeURIComponent(deviceId)}/status`);
+  }
+
+  deviceCapabilities(deviceId: string): Promise<Record<string, unknown>> {
+    return this.api(`/v1/devices/${encodeURIComponent(deviceId)}/capabilities`);
+  }
+
+  deviceConfigurations(deviceId: string): Promise<Record<string, unknown>> {
+    return this.api(`/v1/devices/${encodeURIComponent(deviceId)}/configurations`);
+  }
+
+  /**
+   * The doorway snapshot. Ring answers with the image itself (JPEG or PNG),
+   * not JSON, so this cannot go through api(): the first version did, and
+   * would have thrown on the first real picture while every test passed,
+   * because the tests answered it with JSON.
+   */
+  async downloadSnapshot(
+    deviceId: string,
+    components?: number[],
+  ): Promise<{ contentType: string; bytes: Uint8Array }> {
+    const token = await this.ensureAccessToken();
+    const path = `/v1/devices/${encodeURIComponent(deviceId)}/media/image/download`;
+    const res = await this.f(`${this.apiBase}${path}`, {
       method: "POST",
-      body: JSON.stringify({}),
+      headers: {
+        authorization: `Bearer ${token}`,
+        "content-type": "application/json",
+        accept: "image/jpeg, image/png",
+      },
+      body: JSON.stringify(components ? { components } : {}),
     });
+    if (!res.ok) {
+      throw new Error(`Ring API ${path} HTTP ${res.status}: ${(await res.text()).slice(0, 300)}`);
+    }
+    return {
+      contentType: res.headers.get("content-type") ?? "application/octet-stream",
+      bytes: new Uint8Array(await res.arrayBuffer()),
+    };
   }
 
   /** The familiar-voice path: play audio on a chime (Audio controls scope). */

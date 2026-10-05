@@ -103,6 +103,30 @@ describe("RingClient OAuth", () => {
     const { client } = makeClient(f as unknown as typeof fetch, tokens);
     await client.playChimeAudio("chime-1", "voice-clip-1");
   });
+
+  it("reads the doorway snapshot as an image, not as JSON", async () => {
+    const jpeg = new Uint8Array([0xff, 0xd8, 0xff, 0xe0, 0, 16]);
+    const f = vi.fn(async (url: RequestInfo | URL, init?: RequestInit) => {
+      expect(String(url)).toBe("https://api.amazonvision.com/v1/devices/door-1/media/image/download");
+      expect(init?.method).toBe("POST");
+      expect((init?.headers as Record<string, string>).accept).toContain("image/jpeg");
+      return {
+        ok: true,
+        status: 200,
+        headers: new Headers({ "content-type": "image/jpeg" }),
+        arrayBuffer: async () => jpeg.buffer,
+        json: async () => {
+          throw new SyntaxError("Unexpected token in JSON");
+        },
+        text: async () => "",
+      } as unknown as Response;
+    });
+    const tokens: RingTokens = { accessToken: "at", refreshToken: "rt", expiresAt: Date.now() + 3 * 3600_000 };
+    const { client } = makeClient(f as unknown as typeof fetch, tokens);
+    const shot = await client.downloadSnapshot("door-1");
+    expect(shot.contentType).toBe("image/jpeg");
+    expect(Array.from(shot.bytes.slice(0, 3))).toEqual([0xff, 0xd8, 0xff]);
+  });
 });
 
 describe("account-link nonce", () => {

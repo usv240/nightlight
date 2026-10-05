@@ -10,7 +10,7 @@ from strands.models.bedrock import BedrockModel
 # only reliable way to know is to invoke (FRICTION_LOG.md entry 5). This is
 # the profile verified working from the deployed Lambda, so it is the one
 # used here rather than the one the template assumed.
-DEFAULT_MODEL_ID = "us.anthropic.claude-sonnet-4-5-20250929-v1:0"
+DEFAULT_MODEL_ID = "us.anthropic.claude-sonnet-4-6"
 
 
 def load_model() -> BedrockModel:

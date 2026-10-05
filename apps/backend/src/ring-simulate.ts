@@ -199,7 +199,10 @@ export async function simulateRingDeliveries(
         requestId,
       }),
     );
-    const signature = signBody(body, demoSecret);
+    // The header exactly as Ring sends it: "sha256=" and the hex digest
+    // (Ring API reference, webhook authentication). The kit accepts the
+    // bare digest too, which is why the earlier form passed unnoticed.
+    const signature = `sha256=${signBody(body, demoSecret)}`;
 
     const first = await post(base, body, signature);
 

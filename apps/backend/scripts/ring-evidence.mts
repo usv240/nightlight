@@ -8,6 +8,10 @@ import { RingClient } from "../src/ring";
  *
  *   RING_ACCESS_TOKEN=<playground token> npx tsx scripts/ring-evidence.mts
  *
+ * Simulate a Motion event in the Playground first (its step 3), then run
+ * this inside the same thirty minutes, so the event history has something
+ * Ring itself produced in it.
+ *
  * The Ring console Playground issues a one-click OAuth token valid for
  * thirty minutes, which is enough to exercise every read path this project
  * uses and write down what came back. That window is short, so this does
@@ -117,7 +121,7 @@ async function attempt(
 
 const results: Result[] = [];
 
-const me = await attempt("Account", "GET /v1/accounts/me", () => client.getUserMe());
+const me = await attempt("Account", "GET /v1/users/me", () => client.getUserMe());
 results.push(me);
 
 const devices = await attempt("Devices", "GET /v1/devices", () => client.listDevices());
@@ -137,19 +141,24 @@ if (devices.ok && Array.isArray(raw)) {
   }
 }
 
-if (deviceId) {
+const perDevice: Array<[string, string, (id: string) => Promise<unknown>]> = [
+  ["Event history", "GET /v1/history/devices/{id}/events", (id) => client.eventHistory(id)],
+  ["Status", "GET /v1/devices/{id}/status", (id) => client.deviceStatus(id)],
+  ["Capabilities", "GET /v1/devices/{id}/capabilities", (id) => client.deviceCapabilities(id)],
+  ["Configurations", "GET /v1/devices/{id}/configurations", (id) => client.deviceConfigurations(id)],
+  // The image itself is not written to this public file; only what came
+  // back. A doorway picture is exactly the thing this project never keeps.
+  ["Doorway snapshot", "POST /v1/devices/{id}/media/image/download", async (id) => {
+    const shot = await client.downloadSnapshot(id);
+    return { contentType: shot.contentType, bytes: shot.bytes.length };
+  }],
+];
+for (const [name, endpoint, call] of perDevice) {
   results.push(
-    await attempt("Event history", "GET /v1/devices/{id}/events", () =>
-      client.eventHistory(deviceId!),
-    ),
+    deviceId
+      ? await attempt(name, endpoint, () => call(deviceId!))
+      : { name, endpoint, ok: false, detail: "skipped: no device on this account or in the sandbox" },
   );
-} else {
-  results.push({
-    name: "Event history",
-    endpoint: "GET /v1/devices/{id}/events",
-    ok: false,
-    detail: "skipped: no device on this account or in the sandbox",
-  });
 }
 
 const stamp = new Date().toISOString().replace(/\.\d+Z$/, "Z");

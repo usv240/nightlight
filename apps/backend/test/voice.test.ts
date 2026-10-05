@@ -281,4 +281,18 @@ describe("model ladder configuration cannot silently remove redundancy", () => {
     const { buildModelLadder } = await import("../src/summaries");
     expect(buildModelLadder({} as NodeJS.ProcessEnv).length).toBe(3);
   });
+
+  it("holds no model Bedrock has retired", async () => {
+    // Both answered 404 "reached the end of its life" on 2026-10-05, while
+    // they were rungs two and three of the deployed ladder. Nothing failed:
+    // rung one kept answering, so the net was one model deep and silent.
+    // scripts/bedrock-check.mts with no argument probes every rung live.
+    const retired = [
+      "us.anthropic.claude-3-5-sonnet-20241022-v2:0",
+      "us.anthropic.claude-3-5-haiku-20241022-v1:0",
+    ];
+    const { buildModelLadder } = await import("../src/summaries");
+    const ladder = buildModelLadder({} as NodeJS.ProcessEnv);
+    expect(ladder.filter((m) => retired.includes(m))).toEqual([]);
+  });
 });

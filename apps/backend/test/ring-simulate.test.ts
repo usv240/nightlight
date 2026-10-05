@@ -25,6 +25,8 @@ describe("the Ring delivery proof", () => {
     expect(body.deliveries).toHaveLength(3);
     expect(body.deliveries[0].verdict).toBe("accepted");
     expect(body.deliveries[0].response.status).toBe(200);
+    // Ring's own header format: "sha256=" and a 64-character hex digest.
+    expect(body.deliveries[0].request.signatureHeader).toMatch(/^sha256=[0-9a-f]{64}$/);
     await app.close();
   }, 60_000);
 

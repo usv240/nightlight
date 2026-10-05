@@ -24,8 +24,8 @@ const STATS = [
     infoId: "care-home-evidence",
   },
   {
-    value: "1st",
-    text: "reason families move a parent into care is caregiver exhaustion, not patient decline",
+    value: "70%",
+    text: "of caregivers who moved a relative into care cited the nights in that decision",
     infoId: "institutionalization",
   },
 ];
@@ -545,14 +545,16 @@ export default function Home() {
               idempotent deduplication for any Ring Partner API project.
             </p>
             <pre className="mt-4 overflow-x-auto rounded-[var(--radius-md)] border border-line bg-surface-raised p-4 font-mono text-xs leading-relaxed text-muted">
-{`curl -X POST http://127.0.0.1:8787/api/demo/replay \\
-  -H "content-type: application/json" -d "{}"
+{`API=https://qdvxx267lgnsitq242aplz722a0zuien.lambda-url.us-east-1.on.aws
 
-curl http://127.0.0.1:8787/api/summary`}
+curl $API/api/summary
+curl $API/api/morning-note
+curl $API/api/resilience`}
             </pre>
             <p className="mt-3 text-xs text-muted">
-              Hosted keys arrive with the AWS deployment; run it locally today
-              from the repository README.
+              The deployed API on AWS Lambda, answering now. The household
+              behind it is the simulated one on this page. To run the same
+              engine on your own machine, follow the repository README.
             </p>
           </div>
           <div>
@@ -560,7 +562,7 @@ curl http://127.0.0.1:8787/api/summary`}
             <ul className="mt-3 space-y-2 text-sm leading-relaxed text-muted">
               <li>Ring track entry, Build Ship Shape: Amazon Developer Hackathon</li>
               <li>AWS Builder and Open Source mini challenges</li>
-              <li>Deterministic, unit-tested detection: 153 tests across engine, webhook intake, simulator, and the HTTP path</li>
+              <li>Deterministic, unit-tested detection: 155 tests across engine, webhook intake, simulator, and the HTTP path</li>
               <li>Every demo runs the production engine; simulated data is always labeled</li>
               <li>A running friction log ships in the repository as feedback to the Ring team</li>
             </ul>

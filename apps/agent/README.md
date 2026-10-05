@@ -30,7 +30,7 @@ python apps/agent/week_review.py
 python apps/agent/week_review.py --url https://<function-url>/mcp
 ```
 
-Model: Claude on Amazon Bedrock (`us.anthropic.claude-sonnet-4-5-20250929-v1:0`, the most capable model this account can invoke; see FRICTION_LOG.md entry 5).
+Model: Claude on Amazon Bedrock (`us.anthropic.claude-sonnet-4-6`, the most capable model this account can invoke; see FRICTION_LOG.md entry 5).
 
 ---
 

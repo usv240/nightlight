@@ -32,7 +32,7 @@ from strands.tools.mcp import MCPClient
 DEFAULT_MCP_URL = "http://127.0.0.1:8787/mcp"
 # The most capable Claude this AWS account can invoke; see FRICTION_LOG.md
 # entry 5 for why it is not a current-generation model.
-MODEL_ID = "us.anthropic.claude-sonnet-4-5-20250929-v1:0"
+MODEL_ID = "us.anthropic.claude-sonnet-4-6"
 
 SYSTEM_PROMPT = """You write a weekly review for one family caregiver looking
 after someone living with dementia at home. They are tired. They will read
