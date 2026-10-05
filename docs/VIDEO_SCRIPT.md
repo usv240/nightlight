@@ -1,328 +1,83 @@
 # Demo video script: Nightlight
 
-**Target 2:31. Hard ceiling 3:00.** Judges are not required to watch past
-three minutes, so nothing important lives after 2:00.
+**The beats are data, in [`video/beats.py`](../video/beats.py).** That file
+is what the pipeline reads: the exact line spoken, which shot it goes over,
+and how long it holds. This document is the argument for why those beats
+are in that order. If the two disagree, the code is right and this is stale.
 
-**Narration: 316 spoken words**, which is 2:31 to 2:51 once the demo run
-and page loads are counted. Recount any time:
+**Built 2026-10-05: 2:55.5, 3840x2160, captions burned in, fade to black.**
+`python video/audit.py` checks the shipped file against all 28 asks below
+and the recording rules; it reads the file, not this page.
+
+Recount the spoken words any time:
 
 ```
 python scripts/count-narration.py
 ```
 
-## The one thing a judge should remember
+## The five ideas a judge should leave with
 
-> Door opens at 3am. Nightlight recognises it is unusual. A familiar voice
-> responds. The person returns. The caregiver sleeps. If that fails, the
-> caregiver is alerted.
+1. Most door alarms answer a 3am doorway the same way: they wake the caregiver, night after night.
+2. **Nightlight answers the door first**, with a family voice, and wakes someone only when that is not enough.
+3. It runs on Ring, shown working through Ring's own developer Playground.
+4. On real homes it would have woken caregivers 774 times instead of 14,068.
+5. It needs no new hardware: the doorbell is already on the door.
 
-Every twenty to thirty seconds of this video reinforces that sentence.
-Anything that does not is cut, however true it is. Three statistics, the
-MCP conformance number and the npm package were all moved out of the
-narration for exactly that reason: they compete with the story rather than
-carrying it.
+## The beats
 
-## Criteria, and where each lands
-
-| Criterion | Time | The beat |
+| # | Shot | Narration |
 |---|---|---|
-| Quality of the idea | 0:00 | Gentler first. Wake someone only if that fails. |
-| Design | 0:20 | Thirty nights, mostly quiet. The row is the product. |
-| Tech implementation | 1:45 | Three signed Ring webhooks sent live, and the two that are refused. |
-| Potential impact | 2:05 | How a family connects their own, then 2,936 real nights and the honest cost. |
-
-## Before you record
-
-```
-npm test                      # 125 passing
-npm run demo                  # confirm it prints the month
-```
-
-**Size the terminal first.** `npm run demo` prints 63 lines in about a
-second. It does not scroll, it arrives. Use at least 65 rows, or the month
-scrolls away and you will hunt for dates on camera.
-
-**And make it readable at video resolution.** A judge should not be
-squinting at a terminal to follow you. Set the font large enough that the
-two lines below are legible in a 1080p frame at normal viewing distance,
-then rehearse the cursor movement until you can land on each one without
-looking. If you find yourself hunting on camera, the take is wasted even
-if the words are right.
-
-The two lines you point at:
-
-| Line | What it says |
-|---|---|
-| `2026-09-23` | One doorway event at 02:40, the voice played, you were not woken |
-| `2026-09-12` | The only WOKEN night, 03:05, escalation contacts alerted |
-
-**Note on the clock.** The script says twenty to three, not five past
-three. In the committed demo month 02:40 is the night the voice settled
-and 03:05 is the night it did not. Do not swap them to make the line
-rounder; the screen will contradict you.
-
-Tabs, in order:
-
-1. https://d28hskpupjctiz.cloudfront.net
-2. https://d28hskpupjctiz.cloudfront.net/app/
-3. Terminal, in the repo root
-4. https://github.com/usv240/nightlight/blob/main/docs/EVAL.md
-
-Record at 1920x1080, notifications off, browser at 110 percent.
-
----
-
-## 0:00 to 0:20 The idea
-
-**Point at:** the dark hero band.
-
-> **"When a person living with dementia opens the front door at three in the morning, a normal door alarm wakes the caregiver. Nightlight tries something gentler first: a familiar recorded voice, asking them to come back inside. Only if that fails does it wake the caregiver."**
-
-Pause half a second.
-
-> **"Nightlight answers the door before it wakes anybody."**
-
-No statistics here. They are all true and they all belong later. The idea
-has to land first, on its own.
-
----
-
-## 0:20 to 0:38 Thirty nights
-
-**Point at:** the marks, then rest on each legend swatch for about a
-second as you name it. The entire visual argument rests on two colours
-meaning two specific things, so amber and red have to be unambiguous
-within seconds. The swatches are deliberately larger than the text beside
-them for exactly this.
-
-> **"One mark, one night, from the Ring doorbell a family already owns. Amber: the voice settled it. Red: it did not."**
-
-> **"Twenty-nine nights slept through. That row is the product."**
-
-**Hold for a full second here.** Do not move the cursor, do not start the
-next sentence. It is one of the two strongest lines in the script and it
-needs the silence after it to land.
-
----
-
-## 0:38 to 1:10 The story, live
-
-**Navigate to:** the terminal. **Run it on camera.**
-
-```
-npm run demo
-```
-
-**Point at:** the `2026-09-23` line. Tell the story before you explain the
-plumbing.
-
-> **"Twenty to three in the morning. The door opens, outside this household's normal pattern. Nightlight plays the family's recorded voice. The person comes back inside, and nobody gets woken."**
-
-Now, and only now, the technical claim, in one sentence:
-
-_(The sentence that used to sit here, claiming the event went through the signed Ring pipeline, has moved. It is no longer said; it is shown, in the Ring beat below.)_
-
-**Point at:** the `2026-09-12` line, the only one marked WOKEN.
-
-> **"And the night it did not work. The caregiver was woken. That is the red mark."**
-
-Showing the failure is worth more than hiding it. It is the second half of
-the sentence a judge should remember.
-
----
-
-## 1:10 to 1:30 The caregiver's view
-
-**Navigate to:** the caregiver app. **Point at:** the Live backend badge,
-then the big number.
-
-> **"The caregiver's app, live against the deployed API. One number: eighteen nights slept, in a row."**
-
-**Point at:** the line directly beneath it, "29 of the last 30 nights
-undisturbed in total", for a beat. No narration needed.
-
-The landing page said twenty-nine and this says eighteen, and without that
-second line a judge would reasonably wonder why the number changed. One is
-the whole month, the other is the current unbroken run. The page now says
-both, so you do not have to.
-
-> **"Not incidents detected. A headline about how much it caught builds what families already have."**
-
----
-
-## 1:30 to 1:45 The voice
-
-**Scroll to:** "The voice at the door". **Point at:** the example message.
-
-**Do not press Record.** In a real browser that raises a microphone
-permission dialog and you lose the take.
-
-Read this slowly.
-
-> **"This is the message a family records. Dad, it is night time. Come back inside. I will see you in the morning."**
-
----
-
-## 1:45 to 2:05 Ring, shown rather than claimed
-
-The rules require the video to show the project working through a Ring
-simulator or device. Everything before this point asserted it. This beat
-presses the thing that proves it.
-
-**Navigate:** click the Nightlight wordmark to return to the landing page,
-then the **Ring** link in the nav. Scroll so the heading "Built on Ring,
-and you can check that from here" sits just under the header.
-
-**Point at** the Ring Partner API badge, then press **Send three Ring
-deliveries**. Wait for all three rows. It takes about a second: the
-deliveries go over a real socket and the sandbox replays a month first.
-
-> **"This is the Ring Partner API. Three signed Ring webhooks."**
-
-**Point at row 1** (green, 200 Accepted) as you say:
-
-> **"A real 3am doorway event, accepted."**
-
-**Point at row 2** (red, 401 Rejected):
-
-> **"Tampered in transit, rejected."**
-
-**Point at row 3** (amber, 200 Ignored as duplicate):
-
-> **"Ring retrying the first, ignored. The voice never plays twice."**
-
-The two refusals are the point. A success proves nothing on its own.
-What a family is trusting is that a forged delivery cannot play audio
-into their home at 3am, and that a retry cannot play it twice.
-
-Do not open "The envelope Ring sends". It is there for a reader, and on
-camera it is a wall of JSON.
-
-## 2:05 to 2:15 How a family gets it
-
-Still in the **Ring** section. Scroll down to **Connecting your own Ring
-doorbell**, so the heading and all four steps are on screen at once.
-
-**Point at** the status pill on step 2, then step 4. Both read **Live
-endpoint**.
-
-> **"And this is how a family connects their own doorbell. Three of these four steps are live right now."**
-
-**Point at** step 1's pill, which reads **Needs Ring certification**, and
-end the beat there.
-
-> **"The fourth is Ring's certification."**
-
-Ending on the step that is not ours is deliberate, not an apology. Ring's
-account linking begins in the Ring Appstore, so it is genuinely not ours
-to finish, and saying so is a stronger position than implying the product
-is complete. It also lands on the empty elderly-care category the
-submission opens with.
-
-Do not press **Check three link requests** on camera. It is there for a
-judge who explores the site, and the webhook proof has already carried
-the security argument.
-
-## 1:45 to 2:15 The evidence
-
-**Navigate to:** EVAL.md. **Point at:** the headline table, and then rest
-the cursor on **94.5 percent** for a beat without saying it. It is the
-strongest number in the project and the close says it out loud; seeing it
-here first makes the ending land as a reminder rather than as a new
-claim.
-
-> **"Across thirty-four real homes, a standard alarm would have woken the caregiver fourteen thousand times. Nightlight woke them seven hundred and seventy-four."**
-
-**Point at:** the recall table directly below.
-
-> **"And what that cost, because waking someone less often is easy if you stop noticing. Of thirty-four labelled night exits it flagged seven, and twenty-six of the twenty-seven it missed, the resident came back within half an hour."**
-
-Say it plainly and move on. It is the line that makes every other number
-believable.
-
-**Optional, and genuinely optional:** cut for two seconds to a terminal
-already showing `node scripts/mcp-conform.mjs` output and the npm package
-page. **If the recording feels rushed at any point, drop this.** The
-repository already carries the live MCP verification and the Ring
-integration in full, and two seconds of terminal is a poor trade against a
-close that breathes.
-
----
-
-## 2:15 to 2:35 Close
-
-**Navigate back to:** the landing page, the row of quiet nights.
-
-> **"Across two thousand nine hundred and thirty-six real nights, Nightlight reduced caregiver wake-ups by ninety-four and a half percent. And when the gentle response cannot work, it never fails silently. It wakes the caregiver."**
-
-Pause.
-
-> **"Nightlight is not about detecting more. It is about knowing when intervention is actually needed."**
-
-**Last frame:** the quiet row of nights, full frame. Get back to it
-*before* the final sentence, not after, so the last thing on screen is the
-product rather than a terminal or a GitHub page.
-
-> **"Nightlight. The night shift, handled."**
-
-**Hold the shot for another one to two seconds after you stop speaking.**
-Cutting on the last syllable makes a video feel like it ran out. Letting
-the quiet row sit there is the argument.
-
-Three sentences, one idea. Nothing about protocols, packages or care
-economics competes with the ending.
-
----
-
-## What was deliberately moved out of the narration
-
-Not cut from the project, cut from the spoken script, because each one
-competed with the story rather than carrying it:
-
-- **Six in ten people with dementia wander.** True, cited in EVIDENCE.md.
-  Front-loading it delays the idea by eight seconds.
-- **The controlled trial showing alarms do not improve caregiver sleep.**
-  The strongest argument in the project and the hardest to say quickly. It
-  is the first thing in EVIDENCE.md instead.
-- **Seventy percent of families cite the nights when placing a relative.**
-  Same reason.
-- **MCP, nineteen of nineteen, and the npm package.** Shown on screen, not
-  narrated. A judge who cares will check the repo; a judge who does not
-  should be hearing about a family instead.
-- **6.8 billion hours of unpaid care a year.** It made the ending compete
-  with itself. The close is now one idea.
-
-## If you are over three minutes
-
-1. Cut the voice beat at 1:30. Painful but survivable.
-2. Cut the second half of the caregiver beat at 1:10.
-3. Cut the optional two second MCP cut.
-
-**Never cut:** the live `npm run demo`, the eighteen-nights number, or the
-recall figure.
-
-## Upload checklist
-
-- Check the real duration, not your estimate.
-- YouTube or Vimeo, **public**, not unlisted.
-- English. No third-party music or footage you lack rights to.
-- Title and description name the Ring track.
-- Paste the link into Devpost and into `docs/SUBMISSION.md`, which
-  currently says "add when published".
-
-## Do not say
-
-Do not say it detects wandering. The corpus contains none and the
-evaluation says so. Do not say it prevents anything, delays anything, or
-replaces supervision. It is a home safety aid and the video should sound
-like one.
-
-## Every number spoken here, and where it comes from
-
-| Spoken | Source |
-|---|---|
-| 2,936 nights, 34 homes | `apps/eval/results/casas-hh.json` |
-| 14,000 against 774 | same file, re-derived by `apps/eval/test/claims.test.ts` |
-| 94.5 percent | same file, recomputed from the two wake counts |
-| 7 of 34 exits, 26 of 27 returned | same file, recall table in `docs/EVAL.md` |
-| Eighteen nights slept | live `GET /api/summary` |
+| 1 | The live site: the thirty-night strip, the one red night | > **"It's three in the morning. Someone living with dementia opens the front door. Most door alarms answer the same way: they wake the person caring for them. Night after night, until they can't keep going."** |
+| 2 | The headline, then the four steps of "How it works" | > **"Nightlight answers the door first. A recorded family voice asks them to come back inside. Only if that isn't enough does it wake the caregiver. It learns each household's normal nights, so a school run or a late delivery never sets it off. And it runs on the Ring doorbell the family already has."** |
+| 3 | **Ring's developer Playground** at developer.amazon.com: the sandbox doorbell, a simulated Motion event and its live stream | > **"Here it is on Ring's own developer Playground. Ring's sandbox doorbell reports motion."** |
+| 4 | docs/RING_LIVE.md on GitHub: Nightlight's own client calls, answered | > **"And Nightlight reads it straight from the Ring API."** |
+| 5 | The site's Ring section: three signed deliveries pressed live, accepted, rejected, ignored | > **"Every event from Ring is signed. A tampered one is rejected. A repeat is ignored, so the voice never plays twice."** |
+| 6 | The live demo, "Simulated household" in frame, September 23 | > **"Here's a simulated month, on the real engine. At twenty to three, the door opens. The voice plays, they come back inside, and nobody is woken."** |
+| 7 | The live demo, September 12, the red night | > **"And the night it didn't work. The activity kept going, so the caregiver was woken. If the voice can't play at all, it wakes them straight away."** |
+| 8 | The caregiver app, the voice card | > **"This is the message a family records: Dad, it's night time. Come back inside. I'll see you in the morning."** |
+| 9 | The caregiver app, the eighteen-night count and the morning note | > **"The caregiver sees one number: the nights they slept. Claude on Amazon Bedrock writes the morning note, but only from facts the engine computed."** |
+| 10 | "Ask Alexa how the night went": a session with the deployed MCP server | > **"And in the morning, a caregiver can simply ask an assistant how the night went. Nightlight answers over the Model Context Protocol, the way Alexa+ talks to tools."** |
+| 11 | "Tested on 2,936 nights of real homes. Not ours.": 14,068 and 774, held | > **"On thirty-four real homes from a public research corpus, a standard door alarm would have woken the caregiver fourteen thousand times. Nightlight woke them seven hundred and seventy-four."** |
+| 12 | The measured box: what that restraint cost | > **"And when it chose not to wake anyone during a real exit, twenty-six times out of twenty-seven the person came home within half an hour."** |
+| 13 | The 70 percent card, then the privacy section | > **"Seventy percent of caregivers who moved a relative into care cited the nights. Nightlight needs no new hardware, and it stores no video, no audio, and nothing that identifies a person."** |
+| 14 | The strip, then an end card with the live site, the repository and ring-webhook-kit, then black | > **"It's not about detecting more. It's about knowing when waking someone is actually needed. Nightlight. Let the house respond first."** |
+
+## Wording that was changed on purpose
+
+The script went through four review rounds. The changes that matter for
+honesty:
+
+- **"Most door alarms"**, not "every". The one absolute in the opening, and
+  the one a judge could challenge.
+- **"A simulated month"** is said out loud. The September cut said "here is
+  one of those nights" over the simulated household; the label was on
+  screen, but a viewer should not have to read it to know.
+- **The restraint sentence stays.** Without it, 14,068 to 774 could read as
+  Nightlight ignoring events.
+- **The 70 percent names the mechanism and claims nothing.** It is Pollak
+  and Perlick's finding about why families move a relative into care.
+  Nightlight does not claim to delay that, and the close no longer implies
+  it: "so the nights stop being the reason a family gives up" became "Let
+  the house respond first".
+- **No real people.** Every household on screen is simulated and labelled;
+  every outcome number is from the public CASAS corpus.
+
+## The footage
+
+Beat 3 is Ring's own console, filmed by `video/record_ring.py` in the
+signed-in Chrome profile, with the address bar drawn in and every
+credential-shaped string (the token, the curl command, the WHEP session,
+device identifiers) blurred before it is painted. Generating the token was
+a person's click; everything after it, invoking the device list and
+simulating Motion, was driven on camera. `video/splice_ring.py` cuts three
+windows from that take (the Playground heading, the Motion press, the
+stream) and normalises Chrome's frame-to-frame capture scale; the wait
+while Ring connects the stream is cut, not sped up.
+
+The stream in Ring's sandbox is Ring's sample clip, "Birds on Feeders" by
+Vimeo user Michael Black under CC BY 4.0, and Ring's attribution line is
+in frame while it plays.
+
+Everything else is the deployed site and caregiver app in a real browser
+at 3840x2160, with the live address on screen from the first frame.
+`video/README.md` has the pipeline and the traps.

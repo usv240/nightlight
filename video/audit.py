@@ -81,61 +81,56 @@ def main() -> int:
         (OUT / "timings.json").read_text(encoding="utf8"))["beats"]]
 
     checks: list[tuple[str, bool, str]] = [
-        # The words a judge should leave with.
-        ("the headline number is spoken",
-         "ninety-four and a half percent" in say, "close beat"),
-        ("the failure promise is spoken",
-         "never fails silently" in say, "escalate beat"),
-        ("the reframe is spoken",
-         "not about detecting more" in say, "close beat"),
-        ("the uncomfortable number is spoken",
-         "flagged seven" in say, "cost beat"),
-        ("29 and 18 are reconciled out loud",
-         "eighteen nights" in say.lower() and "twenty-nine" in say.lower(),
-         "streak beat"),
-        # Matched on the two ideas rather than one long phrase. The first
-        # version wanted the exact words "signed ring webhook", and a
-        # rewrite for clarity dropped one of them while saying the same
-        # thing. A check that brittle reports a problem that is not there,
-        # which is how a real one gets ignored.
-        ("the signed pipeline is claimed",
-         "ring partner api" in say.lower() and "signed webhooks" in say.lower(),
-         "ring beat"),
-        # What the camera is pointed at.
-        ("the escalated night is on screen",
-         "escalate" in keys and "ESCALATED" in src["record"],
-         "act_app_escalation"),
-        ("94.5 percent is shown, not just said",
-         "#proof div.grid" in src["record"], "act_evidence"),
-        # The track rule: show the project working through Ring, on camera.
-        ("Ring is shown working, not just named",
-         "ring" in keys and "#ring button" in src["record"]
-         and "ring partner api" in say.lower(),
-         "ring beat presses the live proof"),
-        # Potential impact: the question a family asks before any other.
-        ("how a household connects is shown",
-         "connect" in keys and "#ring-steps" in src["record"]
-         and "connects their own" in say,
-         "connect beat walks the four steps"),
-        # Design and Quality of the Idea: the refusals, which are the
-        # strongest thing on the page for a product that lives in a home.
-        ("the page is shown beyond the three shot sections",
-         "depth" in keys and "page_depth" in src["record"],
-         "depth beat travels the page"),
-        ("what the product refuses to store is said out loud",
-         "never stores video" in say, "privacy beat"),
-        ("the step that is not ours is named",
-         "certification" in say.lower(), "ends on Ring certification"),
-        ("the three Ring verdicts are all spoken",
-         all(w in say.lower() for w in ("accepted", "rejected", "ignored")),
-         "accepted, rejected, ignored"),
+        # The October script's asks, review rounds 1 to 4. The September
+        # checks they replace named beats that no longer exist; a check
+        # for a beat that is gone reports a miss that is not one.
+        ("the opening does not claim every alarm",
+         "most door alarms" in say.lower() and "every door alarm" not in say.lower(),
+         "round 3: 'most', not 'every'"),
+        ("'answers the door first' is said",
+         "answers the door first" in say, "answer-first beat"),
+        ("how it knows 3am is unusual is said",
+         "normal nights" in say, "answer-first beat"),
+        ("Ring's own Playground is on screen",
+         "playground" in keys and (OUT / "ring-clip.mp4").exists()
+         and "developer playground" in say.lower(),
+         "record_ring.py + splice_ring.py"),
+        ("Nightlight reading Ring's API is shown",
+         "ring-reads" in keys and "RING_LIVE.md" in src["record"], "docs/RING_LIVE.md on GitHub"),
+        ("the signed events are pressed live",
+         "signed" in keys and "#ring button" in src["record"]
+         and all(w in say.lower() for w in ("tampered", "rejected", "repeat", "ignored")),
+         "signed beat"),
+        ("the month is called simulated out loud",
+         "simulated month" in say, "month beat"),
+        ("the failure, and the fail-safe, are spoken",
+         "night it didn't work" in say and "can't play at all" in say, "escalated beat"),
+        ("the family's message stands alone",
+         "family-voice" in keys and "Dad, it's night time" in say, "family-voice beat"),
+        ("Bedrock is one clause, inside the product",
+         "Claude on Amazon Bedrock writes the morning note" in say, "caregiver beat"),
+        ("the assistant question is shown",
+         "assistant" in keys and "#mcp-steps" in src["record"], "assistant beat"),
+        ("14,068 and 774 are on screen, alone",
+         "#proof div.grid" in src["record"] and "fourteen thousand" in say, "real-homes beat"),
+        ("the restraint sentence is kept",
+         "twenty-six times out of twenty-seven" in say, "restraint beat"),
+        ("the 70 percent names the mechanism, claims nothing",
+         "Seventy percent of caregivers" in say and "delay" not in say, "why beat"),
+        ("what it refuses to store is said",
+         "stores no video" in say, "why beat"),
+        ("the close does not overclaim",
+         "Let the house respond first" in say and "gives up" not in say, "round 3 close"),
+        ("the links are on screen at the end",
+         "END_CARD_JS" in src["record"] and "github.com/usv240/nightlight" in src["record"],
+         "end card"),
         # How it was recorded.
         # Against the beat records, not against the text of beats.py: a
         # note explaining why the blank open was dropped contains the word
         # "blank", and a check that cannot tell a comment from an action
         # is a check that forbids writing about the past.
         ("it opens on the live site, not a blank screen",
-         BEATS[0].action == "landing_hold"
+         BEATS[0].action == "landing_problem"
          and not any(b.action == "blank" for b in BEATS),
          f"first beat: {BEATS[0].action}"),
         ("the live address is on screen",

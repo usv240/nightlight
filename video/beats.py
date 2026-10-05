@@ -33,9 +33,10 @@ from __future__ import annotations
 import re
 from dataclasses import dataclass
 
-# Polly long-form Gregory at 87 percent lands near this. Used only for the
+# Measured from the September take: Patrick long-form at 95 percent spoke
+# 400 words in 164.8 seconds. Used only for the
 # pre-flight estimate; real timings come from the recording.
-WORDS_PER_MINUTE = 135
+WORDS_PER_MINUTE = 146
 CEILING_SECONDS = 180
 
 
@@ -74,219 +75,173 @@ class Beat:
 
 BEATS: list[Beat] = [
     Beat(
-        key="hello",
-        action="landing_hold",
-        pause_before=0.0,
-        say="Hi everyone, I am Ujwal.",
-        note=(
-            "A human before an interface. No pause in front of it, so the "
-            "video starts with a person rather than with a page."
-        ),
-    ),
-    Beat(
         key="problem",
-        action="landing_hold",
-        pause_before=0.4,
+        action="landing_problem",
         say=(
-            "It is three in the morning. Someone living with dementia opens "
-            "the front door. Every door alarm answers the same way: it wakes "
-            "the person caring for them, night after night, until they cannot "
-            "do it any more."
+            "It's three in the morning. Someone living with dementia opens "
+            "the front door. Most door alarms answer the same way: they wake "
+            "the person caring for them. Night after night, until they can't "
+            "keep going."
         ),
         note=(
-            "The problem first, over the live site. Opening on a blank "
-            "background read as a video that had not started, and gave up "
-            "the one thing a blank screen cannot carry: the real address, "
-            "on screen from the first frame."
+            "The problem first, over the live site, address on screen from "
+            "the first frame. 'Most', not 'every': the one absolute a judge "
+            "could challenge (review round 3)."
         ),
     ),
     Beat(
-        key="name-it",
-        action="landing_hero",
+        key="answer-first",
+        action="landing_answer",
+        pause_before=0.5,
+        say=(
+            "Nightlight answers the door first. A recorded family voice asks "
+            "them to come back inside. Only if that isn't enough does it wake "
+            "the caregiver. It learns each household's normal nights, so a "
+            "school run or a late delivery never sets it off. And it runs on "
+            "the Ring doorbell the family already has."
+        ),
+        note=(
+            "The line the reviewer named most memorable, then how it knows "
+            "3am is unusual, which a judge otherwise has to guess."
+        ),
+    ),
+    Beat(
+        key="playground",
+        action="ring_playground",
+        pause_before=0.5,
+        min_hold=14.1,
+        say=(
+            "Here it is on Ring's own developer Playground. Ring's sandbox "
+            "doorbell reports motion."
+        ),
+        note=(
+            "Ring's simulator, answering the track rule directly. The web "
+            "take holds here and splice_ring.py lays the console footage "
+            "from record_ring.py over exactly this beat."
+        ),
+    ),
+    Beat(
+        key="ring-reads",
+        action="ring_reads",
+        say="And Nightlight reads it straight from the Ring API.",
+        note="docs/RING_LIVE.md on GitHub: the client's own calls, answered.",
+    ),
+    Beat(
+        key="signed",
+        action="signed",
+        pause_before=0.5,
+        say=(
+            "Every event from Ring is signed. A tampered one is rejected. A "
+            "repeat is ignored, so the voice never plays twice."
+        ),
+        note="Beat 3 proves Ring; this proves it was engineered seriously.",
+    ),
+    Beat(
+        key="month",
+        action="demo_month",
+        pause_before=0.5,
+        say=(
+            "Here's a simulated month, on the real engine. At twenty to "
+            "three, the door opens. The voice plays, they come back inside, "
+            "and nobody is woken."
+        ),
+        note="Said to be simulated, and labelled so on screen.",
+    ),
+    Beat(
+        key="escalated",
+        action="demo_escalated",
+        pause_before=0.5,
+        say=(
+            "And the night it didn't work. The activity kept going, so the "
+            "caregiver was woken. If the voice can't play at all, it wakes "
+            "them straight away."
+        ),
+        note="Showing the failure is what makes the successes believable.",
+    ),
+    Beat(
+        key="family-voice",
+        action="family_voice",
+        pause_before=0.5,
+        min_hold=10.0,
+        say=(
+            "This is the message a family records: Dad, it's night time. "
+            "Come back inside. I'll see you in the morning."
+        ),
+        note=(
+            "The most human moment, on its own, with two seconds of quiet "
+            "after it. Do not press Record on camera; a real browser raises "
+            "a microphone permission dialog."
+        ),
+    ),
+    Beat(
+        key="caregiver",
+        action="caregiver",
+        pause_before=0.5,
+        say=(
+            "The caregiver sees one number: the nights they slept. Claude on "
+            "Amazon Bedrock writes the morning note, but only from facts the "
+            "engine computed."
+        ),
+        note="Bedrock as one clause, inside the product.",
+    ),
+    Beat(
+        key="assistant",
+        action="alexa_session",
+        pause_before=0.5,
+        say=(
+            "And in the morning, a caregiver can simply ask an assistant how "
+            "the night went. Nightlight answers over the Model Context "
+            "Protocol, the way Alexa+ talks to tools."
+        ),
+        note="The one place the video shows the Alexa+ entry. The cut if time is short.",
+    ),
+    Beat(
+        key="real-homes",
+        action="real_homes",
         pause_before=0.6,
+        min_hold=16.5,
         say=(
-            "Nightlight tries something gentler first. A familiar recorded "
-            "voice, asking them to come back inside. It wakes the caregiver "
-            "only if that fails."
-        ),
-        note="The product, named once, after the problem has landed.",
-    ),
-    Beat(
-        key="strip",
-        action="landing_strip",
-        pause_before=0.5,
-        min_hold=15.0,
-        say=(
-            "Every mark here is one night. "
-            "Amber means the voice settled it and nobody woke. Red means "
-            "it did not, and the caregiver was woken. Twenty-nine of "
-            "thirty nights slept through."
-        ),
-        note=(
-            "The visual argument. Held long enough to rest on each legend "
-            "swatch, because the whole page depends on two colours."
-        ),
-    ),
-    Beat(
-        key="night",
-        action="app_open",
-        pause_before=0.6,
-        say=(
-            "Here is one of those nights. Twenty to three in the morning, "
-            "the front door opened, at an hour this household never opens "
-            "it. The voice played, the person came back inside, and nobody "
-            "was woken."
-        ),
-        note=(
-            "The story of a single night, in the order a family lives it. "
-            "The sentence that used to claim it was real is gone: the ring "
-            "beat now shows it instead."
-        ),
-    ),
-    Beat(
-        key="escalate",
-        action="app_escalation",
-        pause_before=0.5,
-        say=(
-            "And the night it did not work. Five past three, the activity "
-            "kept going, so the caregiver was woken. It never fails silently."
-        ),
-        note=(
-            "The second half of the sentence a judge should remember. "
-            "Showing the failure is what makes the successes believable."
-        ),
-    ),
-    Beat(
-        key="voice",
-        action="app_voice",
-        pause_before=0.5,
-        say=(
-            "This is the message a family records. Dad, it is night time. "
-            "Come back inside. I will see you in the morning."
-        ),
-        note=(
-            "The most human line in the project. Do not press Record on "
-            "camera; a real browser raises a microphone permission dialog."
-        ),
-    ),
-    Beat(
-        key="streak",
-        action="app_streak",
-        pause_before=0.5,
-        say=(
-            "Eighteen nights slept in a row, and twenty-nine of the last "
-            "thirty. That is not a count of what it caught. It is a count "
-            "of the nights nobody was woken."
-        ),
-        note=(
-            "Both numbers on one screen, because meeting 29 and 18 on two "
-            "pages reads as a contradiction."
-        ),
-    ),
-    Beat(
-        key="ring",
-        action="ring_proof",
-        pause_before=0.5,
-        say=(
-            "This is the Ring Partner API. Three signed webhooks. A real "
-            "doorbell event at three in the morning: accepted. The same "
-            "event, one byte changed on the way: rejected. Ring sending it "
-            "twice: ignored, so the voice never plays twice."
-        ),
-        note=(
-            "The rules require the video to show the project working through "
-            "Ring, not to say so. Three real deliveries to the live endpoint, "
-            "and the two failures are the ones that make the success mean "
-            "anything."
-        ),
-    ),
-    Beat(
-        key="connect",
-        action="ring_connect",
-        pause_before=0.5,
-        say=(
-            "And this is how a family connects their own. Three of these "
-            "four steps are live. The fourth is Ring's certification."
-        ),
-        note=(
-            "The question a family asks before any of the others: how do I "
-            "get this. Ending on the step that is not ours is deliberate. A "
-            "judge trusts a team that knows exactly where its product stops "
-            "more than one that implies it is finished."
-        ),
-    ),
-    Beat(
-        key="evidence",
-        action="evidence",
-        pause_before=0.6,
-        say=(
-            "Thirty-four real homes, recorded by researchers, not by us. A "
-            "standard alarm would have woken the caregiver fourteen "
+            "On thirty-four real homes from a public research corpus, a "
+            "standard door alarm would have woken the caregiver fourteen "
             "thousand times. Nightlight woke them seven hundred and "
             "seventy-four."
         ),
-        note="Numbers from data we did not author, shown on the page.",
+        note="The two numbers own the frame and hold three seconds after the line.",
     ),
     Beat(
-        key="cost",
+        key="restraint",
         action="evidence_cost",
-        pause_before=0.4,
         say=(
-            "And what that cost. There were thirty-four real "
-            "night-time exits. Nightlight flagged seven. Of the "
-            "twenty-seven it let pass, twenty-six came home within half an "
-            "hour."
+            "And when it chose not to wake anyone during a real exit, "
+            "twenty-six times out of twenty-seven the person came home "
+            "within half an hour."
         ),
-        note=(
-            "The uncomfortable number. It is what makes the others "
-            "believable rather than merely impressive."
-        ),
+        note="Without it, 14,068 to 774 could read as ignoring events.",
     ),
     Beat(
-        key="depth",
-        action="page_depth",
+        key="why",
+        action="why_privacy",
         pause_before=0.5,
         say=(
-            "Every claim here has its reasoning under it. And one rule "
-            "under all of them: Nightlight never stores video, audio, or "
-            "anything that could identify a person."
+            "Seventy percent of caregivers who moved a relative into care "
+            "cited the nights. Nightlight needs no new hardware, and it "
+            "stores no video, no audio, and nothing that identifies a person."
         ),
-        note=(
-            "The page is deeper than the six shots before this, and a judge "
-            "who never scrolls will not know. The first sentence names what "
-            "the camera is travelling past, which is the fix for an earlier "
-            "cut where the words described the privacy list while the "
-            "screen was still three sections above it. It rests on the "
-            "things the product refuses to hold, the strongest thing on the "
-            "page for something that lives in somebody's home."
-        ),
+        note="Names the mechanism without claiming Nightlight changes it.",
     ),
     Beat(
         key="close",
-        action="landing_strip_final",
+        action="landing_close",
         pause_before=0.5,
-        min_hold=9.0,
+        min_hold=15.5,
         say=(
-            "Across two thousand nine hundred and thirty-six real nights, "
-            "Nightlight reduced caregiver wake-ups by ninety-four and a half "
-            "percent. It is not about detecting more. It is about knowing "
-            "when waking someone is actually needed. Nightlight. So that the "
-            "nights stop being the reason a family gives up."
+            "It's not about detecting more. It's about knowing when waking "
+            "someone is actually needed. Nightlight. Let the house respond "
+            "first."
         ),
         note=(
-            "The headline number, the reframe, then product plus promise, "
-            "held on the quiet row. Never on a logo or a terminal."
-        ),
-    ),
-    Beat(
-        key="thanks",
-        action="hold",
-        pause_before=0.4,
-        min_hold=2.2,
-        say="Thank you.",
-        note=(
-            "Its own beat. Crowded onto the closing line it gets swallowed. "
-            "Nothing follows it."
+            "Calls back to 'answers the door first'. Two seconds on the "
+            "strip, then the silent end card with the links, then black."
         ),
     ),
 ]

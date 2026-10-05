@@ -148,9 +148,15 @@ def main() -> int:
         "OutlineColour=&H33000000,BorderStyle=3,Outline=1,Shadow=0,"
         "MarginV=34,Alignment=2"
     )
+    # The last second fades to black after the end card, so the video ends
+    # rather than stopping.
+    total = float(subprocess.run(
+        ["ffprobe", "-v", "error", "-show_entries", "format=duration",
+         "-of", "csv=p=0", str(OUT / "nightlight-demo.mp4")],
+        check=True, capture_output=True, text=True).stdout.strip())
     proc = subprocess.run(
         ["ffmpeg", "-y", "-i", "nightlight-demo.mp4",
-         "-vf", f"subtitles=subs.srt:force_style='{style}'",
+         "-vf", f"subtitles=subs.srt:force_style='{style}',fade=t=out:st={total - 1.0:.3f}:d=1.0",
          "-c:v", "libx264", "-crf", "19", "-preset", "medium",
          "-tune", "stillimage",
          "-pix_fmt", "yuv420p", "-c:a", "copy", burned.name],

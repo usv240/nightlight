@@ -4,8 +4,10 @@ No video editor at any point. Run in order:
 
 ```
 python beats.py        # the script as data; fails if the plan is over 3:00
+python narrate.py      # one Amazon Polly clip per beat (first, so the cursor is timed to real lines)
+python record_ring.py  # Ring's developer Playground; a person clicks Generate token
+python splice_ring.py 496.5:499.6 532.4:534.8 538.9:547.0   # the windows of that take beat 3 uses
 python record.py       # Playwright drives and films the live site
-python narrate.py      # one Amazon Polly clip per beat
 python assemble.py     # audio built against the recording, then dead air cut
 python subtitle.py     # cues from the finished cut, burned in
 python audit.py        # checks the built file against every instruction
@@ -78,6 +80,27 @@ browser, so a judge has only the presenter's word that any of it is live.
 `URL_CHIP_JS` renders `location.href` and re-reads it four times a second,
 which means it follows a route change and cannot display an address the
 page is not actually at.
+
+## Ring's console, beat 3
+
+**The token is the account holder's click.** The Playground issues a
+thirty-minute token from a button, and then a thirty-minute cooldown, so
+`record_ring.py` opens the page in the signed-in profile, records, and
+waits. Everything after the click is driven from `build/ring-cmd.txt`.
+
+**Nothing secret is legible on camera.** A MutationObserver blurs any run
+of token characters, any line carrying "Bearer", and every curl block,
+before the next paint.
+
+**Chrome does not hold one capture scale.** At 1600x900 and 2.4x device
+scale, frames arrived at 1.8x mostly, at 2.4x now and then as a crop of a
+different render, and occasionally smaller. `splice_ring.py` reads each
+frame's real width off the drawn address bar and holds the last good
+frame over any frame at another size.
+
+**The web take uses a clapperboard.** A white square before the first beat
+is found again in the file and every mark shifted by the difference, as in
+EveryWord's recorder; the picture ran 0.9 s ahead of the clock.
 
 ## Why audit.py exists
 

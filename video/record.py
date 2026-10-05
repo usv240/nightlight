@@ -158,10 +158,14 @@ URL_BAR_JS = (r"""
 
   // The page's own sticky headers pin themselves to the viewport top,
   // which is now behind this bar, so they are pushed down by its height.
+  // Divided by the body's zoom: both live inside body, so a value written
+  // in frame pixels is multiplied again, and the 4K take showed a band of
+  // page between the bar and the header for exactly that reason.
+  const Z = parseFloat(document.body && document.body.style.zoom) || 1;
   const style = document.createElement('style');
   style.textContent =
-    'body { padding-top: ' + H + 'px !important; }' +
-    'header { top: ' + H + 'px !important; }';
+    'body { padding-top: ' + (H / Z) + 'px !important; }' +
+    'header { top: ' + (H / Z) + 'px !important; }';
   document.documentElement.appendChild(style);
 
   const bar = document.createElement('div');
@@ -473,6 +477,38 @@ class Recorder:
 
     def hold(self, seconds: float) -> None:
         self.page.wait_for_timeout(int(seconds * 1000))
+
+
+# The clapperboard, ported from EveryWord's recorder. Playwright's picture
+# starts seconds before the recorder's clock (the page loads first, and at
+# 4K the encoder starts earlier still), so marks taken on the clock are
+# early in the file by an amount that differs every take. The take shows a
+# white square over the dark address bar for a moment before the first
+# beat, finds it again in the file, and shifts every mark by the difference.
+CLAP_MS = 400
+CLAP_JS = (
+    "var k=document.createElement('div');k.id='__clap';"
+    "k.style.cssText='position:fixed;left:0;top:0;width:" + str(160 * SCALE) + "px;height:" + str(160 * SCALE) + "px;"
+    "z-index:2147483647;background:#fff';document.documentElement.appendChild(k);"
+)
+
+
+def find_clap(path: Path) -> float:
+    """The second at which the corner first goes white in the file."""
+    rate = subprocess.run(
+        ["ffprobe", "-v", "error", "-select_streams", "v:0",
+         "-show_entries", "stream=r_frame_rate", "-of", "csv=p=0", str(path)],
+        check=True, capture_output=True, text=True).stdout.strip()
+    num, den = (int(x) for x in rate.split("/"))
+    fps = num / den
+    raw = subprocess.run(
+        ["ffmpeg", "-v", "error", "-t", "60", "-i", str(path),
+         "-vf", f"crop={150 * SCALE}:{50 * SCALE}:0:0,scale=1:1", "-f", "rawvideo", "-pix_fmt", "gray", "-"],
+        check=True, capture_output=True).stdout
+    for k, level in enumerate(raw):
+        if level > 200:
+            return k / fps
+    raise SystemExit("no clapperboard in the first minute of the take; the marks cannot be aligned")
 
 
 def assert_full_frame(video: Path) -> None:
@@ -830,6 +866,224 @@ def act_hold(r: Recorder) -> None:
     pass
 
 
+# --------------------------------------------------------------------------
+# The October cut (review rounds 1 to 4). New beats, and the old actions
+# re-aimed where the line they serve changed.
+# --------------------------------------------------------------------------
+
+GITHUB_RING_LIVE = "https://github.com/usv240/nightlight/blob/main/docs/RING_LIVE.md"
+STEP_CARD = "#how div.grid > div"
+STAT_CARD = "#problem div.grid > div"
+
+
+def act_landing_problem(r: Recorder):
+    r.glide(1160 * SCALE, 420 * SCALE, steps=30)
+    yield
+    # The one red night while "they wake the person caring for them".
+    r.on_phrase("Most door alarms")
+    r.point_at(".night-mark[data-kind='woken']")
+
+
+def act_landing_answer(r: Recorder):
+    r.point_at("h1")
+    yield
+    r.on_phrase("A recorded family voice")
+    r.scroll_to("#how h2", offset=150)
+    r.point_at(STEP_CARD, nth=2)
+    r.on_phrase("Only if")
+    r.point_at(STEP_CARD, nth=3)
+    r.on_phrase("It learns")
+    r.point_at(STEP_CARD, nth=0)
+    r.on_phrase("And it runs")
+    r.point_at(STEP_CARD, nth=1)
+
+
+def act_ring_playground(r: Recorder) -> None:
+    """Held, not filmed: splice_ring.py lays Ring's console over this beat."""
+    r.glide(WIDTH * 0.92, HEIGHT * 0.9, steps=10)
+
+
+def act_ring_reads(r: Recorder):
+    """docs/RING_LIVE.md on GitHub: what the client's own calls got back.
+
+    A public page with its own address, not a terminal: anyone can open it
+    and read which endpoints answered and when, with every identifier
+    redacted by the script that wrote it.
+    """
+    r.page.goto(GITHUB_RING_LIVE, wait_until="domcontentloaded", timeout=90_000)
+    r.page.wait_for_selector("article", timeout=60_000)
+    r.page.wait_for_timeout(600)
+    # The results table just above the bottom edge, so the redacted JSON
+    # samples under it stay out of frame: no code on screen in this video.
+    r.scroll_to("article h2:has-text('Account')", offset=1110)
+    r.hold(0.3)
+    yield
+    r.point_at("article table tr:has-text('Devices')")
+    r.hold(1.2)
+    r.point_at("article table tr:has-text('Account')")
+
+
+def act_signed(r: Recorder):
+    """The three signed deliveries; act_ring_proof without the trip home."""
+    r.page.goto(SITE, wait_until="networkidle", timeout=90_000)
+    r.page.wait_for_selector(".night-mark", timeout=60_000)
+    r.scroll_to("#ring h2", offset=190)
+    r.warm(f"{API}/api/ring/simulate")
+    r.hold(0.3)
+    r.point_at(RING_SEND)
+    yield
+    r.click_at(RING_SEND, settle=0.3)
+    rows = r.page.locator("#ring ol > li:nth-child(3)")
+    failed = r.page.locator("#ring p:has-text('could not be reached')")
+    rows.or_(failed).first.wait_for(state="visible", timeout=60_000)
+    if failed.count():
+        raise SystemExit(f"Ring proof failed on the live site: {failed.first.inner_text()}")
+    r.page.wait_for_timeout(250)
+    r.scroll_to("#ring ol", offset=200)
+    r.on_phrase("tampered")
+    r.point_at("#ring ol > li", nth=1)
+    r.on_phrase("A repeat")
+    r.point_at("#ring ol > li", nth=2)
+
+
+DEMO_NIGHT = "#demo button[aria-label^='Night of {}']"
+
+
+def act_demo_month(r: Recorder):
+    # The "Simulated household" label in frame while "simulated" is said.
+    r.scroll_to("#demo h2", offset=120)
+    r.hold(0.3)
+    r.point_at("#demo span:text-is('Simulated household')")
+    yield
+    r.on_phrase("At twenty to three")
+    r.scroll_to("#demo p:text-is('One square per night. Choose one.')", offset=170)
+    r.click_at(DEMO_NIGHT.format("2026-09-23"), settle=0.3)
+    r.page.wait_for_timeout(300)
+    r.point_at("#demo ol > li:has-text('02:40')")
+
+
+def act_demo_escalated(r: Recorder):
+    r.click_at(DEMO_NIGHT.format("2026-09-12"), settle=0.3)
+    r.page.wait_for_timeout(400)
+    r.point_at("#demo ol > li", nth=0)
+    yield
+    r.on_phrase("The activity kept going")
+    r.point_at("#demo ol > li", nth=-1)
+
+
+def act_family_voice(r: Recorder) -> None:
+    r.page.evaluate(SMOOTH_SCROLL_JS, [0, 20])
+    r.page.wait_for_timeout(160)
+    r.click_at("header a[href='/app/']")
+    r.page.wait_for_function(
+        "() => document.body.innerText.includes('in a row')", timeout=60_000)
+    r.scroll_to("text=The voice at the door", offset=196)
+    r.hold(0.6)
+    r.point_at("text=Dad, it is night time")
+
+
+def act_caregiver(r: Recorder):
+    r.page.evaluate(SMOOTH_SCROLL_JS, [0, 26])
+    r.page.wait_for_timeout(200)
+    r.point_at("text=in a row, and counting")
+    yield
+    r.on_phrase("Claude on Amazon Bedrock")
+    r.point_at("text=Worded by Claude on Amazon Bedrock")
+
+
+MCP_START = "#alexa button:has-text('Start a session')"
+
+
+def act_alexa_session(r: Recorder):
+    r.page.evaluate(SMOOTH_SCROLL_JS, [0, 20])
+    r.page.wait_for_timeout(160)
+    r.click_at("header a")
+    r.page.wait_for_selector(".night-mark", timeout=60_000)
+    r.scroll_to("#alexa h2", offset=150)
+    r.hold(0.3)
+    r.point_at(MCP_START)
+    yield
+    r.click_at(MCP_START, settle=0.3)
+    r.page.locator("#mcp-steps > li").nth(2).wait_for(state="visible", timeout=60_000)
+    r.scroll_to("#mcp-steps", offset=260)
+    r.on_phrase("Nightlight answers")
+    r.point_at("#mcp-steps > li", nth=-1)
+
+
+def act_real_homes(r: Recorder):
+    r.scroll_to("#proof h2", offset=206)
+    r.hold(0.5)
+    yield
+    r.on_phrase("standard door alarm")
+    r.point_at("#proof div.grid > div", nth=0)
+    r.on_phrase("seven hundred")
+    r.point_at("#proof div.grid > div", nth=1)
+
+
+def act_why(r: Recorder):
+    r.scroll_to("#problem div.grid", offset=330)
+    r.hold(0.3)
+    r.point_at(STAT_CARD, nth=3)
+    yield
+    r.on_phrase("Nightlight needs")
+    r.scroll_to("text=Nightlight never stores", offset=420)
+    r.point_at("text=Nightlight never stores")
+    r.hold(1.6)
+    r.point_at("text=Continuous video or any audio")
+
+
+# The links, for a judge who wants to check. Below the address bar, above
+# the page, faded in; appended to the document element for the same reason
+# the cursor is (body carries the zoom).
+END_CARD_JS = """
+(() => {
+  const S = __SCALE__;
+  const card = document.createElement('div');
+  card.id = '__endcard';
+  card.style.cssText = [
+    'position:fixed', 'left:0', 'right:0', 'bottom:0', 'top:' + (56 * S) + 'px',
+    'z-index:2147483645', 'background:#0f1626', 'color:#f2f4f8',
+    'display:flex', 'flex-direction:column', 'align-items:center', 'justify-content:center',
+    'gap:' + (22 * S) + 'px', 'font-family:Inter,system-ui,sans-serif',
+    'opacity:0', 'transition:opacity 500ms ease-out',
+  ].join(';');
+  const h = document.createElement('div');
+  h.textContent = 'Nightlight';
+  h.style.cssText = 'font-weight:700;font-size:' + (64 * S) + 'px;letter-spacing:-0.5px;margin-bottom:' + (18 * S) + 'px';
+  card.appendChild(h);
+  [['Live', 'd28hskpupjctiz.cloudfront.net'],
+   ['Code', 'github.com/usv240/nightlight'],
+   ['Open source', 'npmjs.com/package/ring-webhook-kit']].forEach(([k, v]) => {
+    const row = document.createElement('div');
+    row.style.cssText = 'display:flex;gap:' + (18 * S) + 'px;align-items:baseline;font-size:' + (30 * S) + 'px';
+    const a = document.createElement('span'); a.textContent = k;
+    a.style.cssText = 'color:#e8a33d;font-weight:600;min-width:' + (190 * S) + 'px;text-align:right';
+    const b = document.createElement('span'); b.textContent = v;
+    b.style.cssText = 'font-family:ui-monospace,Consolas,monospace';
+    row.appendChild(a); row.appendChild(b); card.appendChild(row);
+  });
+  document.documentElement.appendChild(card);
+  // The cursor ring sits above everything; the card is not something to
+  // point at.
+  document.querySelectorAll('div').forEach((d) => {
+    if (d.style.zIndex === '2147483647') d.style.display = 'none';
+  });
+  requestAnimationFrame(() => { card.style.opacity = '1'; });
+})();
+""".replace("__SCALE__", str(SCALE))
+
+
+def act_landing_close(r: Recorder):
+    r.page.evaluate(SMOOTH_SCROLL_JS, [0, 26])
+    r.page.wait_for_timeout(240)
+    r.glide(1160 * SCALE, 420 * SCALE)
+    yield
+    # Two seconds on the strip after the last word, then the links.
+    r.hold(r.line_seconds() + 2.0)
+    r.glide(WIDTH + 40, HEIGHT * 0.5, steps=6)
+    r.page.evaluate(END_CARD_JS)
+
+
 ACTIONS = {
     "landing_hold": act_landing_hold,
     "landing_hero": act_landing_hero,
@@ -845,6 +1099,19 @@ ACTIONS = {
     "page_depth": act_page_depth,
     "landing_strip_final": act_landing_strip_final,
     "hold": act_hold,
+    "landing_problem": act_landing_problem,
+    "landing_answer": act_landing_answer,
+    "ring_playground": act_ring_playground,
+    "ring_reads": act_ring_reads,
+    "signed": act_signed,
+    "demo_month": act_demo_month,
+    "demo_escalated": act_demo_escalated,
+    "family_voice": act_family_voice,
+    "caregiver": act_caregiver,
+    "alexa_session": act_alexa_session,
+    "real_homes": act_real_homes,
+    "why_privacy": act_why,
+    "landing_close": act_landing_close,
 }
 
 
@@ -914,8 +1181,14 @@ def main() -> int:
         page.goto(SITE, wait_until="networkidle", timeout=90_000)
         page.wait_for_selector(".night-mark", timeout=60_000)
         page.wait_for_timeout(600)
+        page.evaluate(CLAP_JS)
+        clap_at = time.monotonic()
+        page.wait_for_timeout(CLAP_MS)
+        page.evaluate("document.getElementById('__clap').remove()")
+        page.wait_for_timeout(500)
 
         started = time.monotonic()
+        clap_clock = clap_at - started  # before the clock began, so negative
         r = Recorder(page, started, narration)
         print("recording:")
         for beat in BEATS:
@@ -969,9 +1242,17 @@ def main() -> int:
          "-of", "csv=p=0", str(mp4)],
         check=True, capture_output=True, text=True).stdout.strip())
 
+    # Marks were taken on the clock; the file runs on its own time. The
+    # clap is the one event seen by both.
+    offset = find_clap(mp4) - clap_clock
+    if not 0.0 <= offset <= 60.0:
+        raise SystemExit(f"the picture is offset {offset:.2f}s from the clock, which is not credible")
+    for t in r.timings:
+        t["at"] = round(t["at"] + offset, 3)
+    print(f"picture runs {offset:.2f}s ahead of the clock; marks shifted")
     (OUT / "timings.json").write_text(
         json.dumps({"beats": r.timings, "wall": round(total, 3),
-                    "video": round(dur, 3)}, indent=1),
+                    "video": round(dur, 3), "clockOffset": round(offset, 3)}, indent=1),
         encoding="utf8",
     )
     print(f"\nwall clock {total:.1f}s, encoded video {dur:.1f}s")

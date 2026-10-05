@@ -154,10 +154,17 @@ def plan_cuts(starts: dict[str, float], narration: dict[str, float],
     already settled with nothing being said over it.
     """
     keep: list[tuple[float, float]] = []
-    cursor = 0.0
+    # From the first beat, not from zero: before it are the page load and
+    # the clapperboard, neither of which is part of the story.
+    cursor = starts[BEATS[0].key]
     for i, beat in enumerate(BEATS):
         at = starts[beat.key]
-        allowed = at + narration[beat.key] + SLACK
+        # A beat with a deliberate hold keeps it: the Playground needs time
+        # to register, the two numbers own the frame for three seconds, the
+        # end card has to be readable. Everything else keeps its line and
+        # SLACK. The mark comes after pause_before, so the hold is measured
+        # from there.
+        allowed = at + max(narration[beat.key] + SLACK, beat.min_hold - beat.pause_before)
         nxt = starts[BEATS[i + 1].key] if i + 1 < len(BEATS) else total
         end = min(allowed, nxt)
         keep.append((cursor, end))
@@ -240,8 +247,28 @@ def main() -> int:
     if biggest[1] > 1:
         print(f"  largest single stall: {biggest[0]}, {biggest[1]:.1f}s")
 
+    # Beat "playground" is Ring's own console, filmed by record_ring.py and
+    # cut by splice_ring.py. The web take only held the page there; the
+    # console footage is laid over exactly that beat, frozen on its last
+    # frame if the beat outlasts the clip, before anything is cut.
+    source = OUT / "screen.mp4"
+    if "playground" in starts:
+        clip = OUT / "ring-clip.mp4"
+        if not clip.exists():
+            raise SystemExit("no ring-clip.mp4: run record_ring.py and splice_ring.py first")
+        a = starts["playground"]
+        b = starts["ring-reads"]
+        source = OUT / "screen_spliced.mp4"
+        run(["ffmpeg", "-y", "-i", str(OUT / "screen.mp4"), "-i", str(clip),
+             "-filter_complex",
+             f"[1:v]tpad=stop_mode=clone:stop_duration=60,setpts=PTS-STARTPTS+{a:.3f}/TB[r];"
+             f"[0:v][r]overlay=eof_action=pass:enable='between(t,{a:.3f},{b:.3f})'",
+             "-c:v", "libx264", "-crf", "18", "-preset", "medium", "-tune", "stillimage",
+             "-pix_fmt", "yuv420p", "-an", str(source)])
+        print(f"  Ring console laid over {a:.1f}s to {b:.1f}s")
+
     cut = OUT / "screen_cut.mp4"
-    cut_video(OUT / "screen.mp4", segments, cut, work)
+    cut_video(source, segments, cut, work)
     cut_len = probe(cut)
 
     # Rebuild the beat starts against the shortened timeline. A beat's new
