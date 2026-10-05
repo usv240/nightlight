@@ -5,7 +5,7 @@ is what the pipeline reads: the exact line spoken, which shot it goes over,
 and how long it holds. This document is the argument for why those beats
 are in that order. If the two disagree, the code is right and this is stale.
 
-**Built 2026-10-05: 2:55.5, 3840x2160, captions burned in, fade to black.**
+**Built 2026-10-05: 2:55.5, 3840x2160, captions burned in, fade to black. Published: https://youtu.be/zKFATjjE2BM**
 `python video/audit.py` checks the shipped file against all 28 asks below
 and the recording rules; it reads the file, not this page.
 
