@@ -1,4 +1,5 @@
 import { McpProof } from "../components/McpProof";
+import { OwnHousehold } from "../components/OwnHousehold";
 import { RingConnect } from "../components/RingConnect";
 import { RingDeliveryProof } from "../components/RingDeliveryProof";
 import Link from "next/link";
@@ -452,6 +453,9 @@ export default function Home() {
         <div className="mt-10">
           <McpProof />
         </div>
+        <div className="mt-6">
+          <OwnHousehold />
+        </div>
       </section>
 
       {/* Evidence */}
@@ -562,7 +566,7 @@ curl $API/api/resilience`}
             <ul className="mt-3 space-y-2 text-sm leading-relaxed text-muted">
               <li>Ring track entry, Build Ship Shape: Amazon Developer Hackathon</li>
               <li>AWS Builder and Open Source mini challenges</li>
-              <li>Deterministic, unit-tested detection: 155 tests across engine, webhook intake, simulator, and the HTTP path</li>
+              <li>Deterministic, unit-tested detection: 160 tests across engine, webhook intake, simulator, and the HTTP path</li>
               <li>Every demo runs the production engine; simulated data is always labeled</li>
               <li>A running friction log ships in the repository as feedback to the Ring team</li>
             </ul>

@@ -11,6 +11,7 @@ import { MODEL_LADDER, phraseMorningNote } from "./summaries";
 import { RingClient, validateLinkNonce, type RingTokens } from "./ring";
 import { simulateRingDeliveries } from "./ring-simulate";
 import { checkRingAccountLink } from "./ring-link-check";
+import { callerFrom, householdIdFor, issueKey, issuedKeyBody } from "./keys";
 
 /**
  * Nightlight backend service.
@@ -37,10 +38,58 @@ export function buildServer(opts: { store?: NightlightStore } = {}) {
   const app = Fastify({ logger: false });
   const adapters = new DemoAdapters();
   const store = opts.store ?? new MemoryStore();
-  const runtime = new HouseholdRuntime(store, adapters, { householdId: "demo-house" });
-  // Reassignable, because the demo replay has to start a new run rather
-  // than look like Ring redelivering the same events. See the replay route.
-  let deduper = new Deduper();
+  /*
+    One household for everybody, plus one per API key.
+
+    No key is the labelled demo household, exactly as it always was: the
+    real Ring webhook, the caregiver app and every link in the video land
+    there. A key from POST /v1/keys is a household of its own, made on
+    first use, with its own event log, adapters and deduper, so a judge
+    can replay a month, post their own Ring events and change the night
+    window without touching anybody else's.
+  */
+  interface Household {
+    runtime: HouseholdRuntime;
+    adapters: DemoAdapters;
+    deduper: Deduper;
+    simulated: boolean;
+  }
+  const demo: Household = {
+    runtime: new HouseholdRuntime(store, adapters, { householdId: "demo-house" }),
+    adapters,
+    deduper: new Deduper(),
+    simulated: true,
+  };
+  const keyed = new Map<string, Household>();
+  const householdFor = (space: string | null): Household => {
+    if (space === null) return demo;
+    let h = keyed.get(space);
+    if (!h) {
+      const own = new DemoAdapters();
+      h = {
+        runtime: new HouseholdRuntime(store, own, { householdId: householdIdFor(space) }),
+        adapters: own,
+        deduper: new Deduper(),
+        simulated: false,
+      };
+      keyed.set(space, h);
+    }
+    return h;
+  };
+  /** The caller's household, or a 401 already sent. */
+  const householdOf = (
+    req: { headers: { authorization?: string | string[] | undefined } },
+    reply: { code: (n: number) => { header: (k: string, v: string) => { send: (b: unknown) => unknown } } },
+  ): Household | null => {
+    const caller = callerFrom(req.headers.authorization);
+    if ("error" in caller) {
+      reply.code(401).header("WWW-Authenticate", 'Bearer realm="nightlight"').send({ error: caller.error });
+      return null;
+    }
+    return householdFor(caller.space);
+  };
+  // The demo household, under the name every existing route already uses.
+  const runtime = demo.runtime;
 
   // Capture the raw body for signature verification before JSON parsing.
   //
@@ -132,7 +181,9 @@ export function buildServer(opts: { store?: NightlightStore } = {}) {
       return reply.code(400).send({ error: (err as Error).message });
     }
 
-    if (!deduper.firstSeen(webhook.requestId)) {
+    const target = householdOf(req, reply);
+    if (!target) return;
+    if (!target.deduper.firstSeen(webhook.requestId)) {
       return reply.code(200).send({ deduplicated: true });
     }
 
@@ -150,16 +201,19 @@ export function buildServer(opts: { store?: NightlightStore } = {}) {
         requestId: webhook.requestId,
       };
       if (webhook.subType) event.subType = webhook.subType;
-      const fresh = await runtime.ingestEvent(event);
+      const fresh = await target.runtime.ingestEvent(event);
       return reply.code(200).send({ accepted: true, newEffects: fresh.length });
     }
     return reply.code(200).send({ accepted: true, ignored: webhook.eventType });
   });
 
   app.post("/api/demo/replay", async (req, reply) => {
+    const h = householdOf(req, reply);
+    if (!h) return;
     const { seed } = (req.body as { json?: { seed?: number } })?.json ?? {};
-    await runtime.reset();
-    adapters.journal.length = 0;
+    await h.runtime.reset();
+    h.adapters.journal.length = 0;
+    h.simulated = true;
     /*
       The deduper has to be reset too, and forgetting it made this endpoint
       destroy the thing it exists to build.
@@ -174,10 +228,11 @@ export function buildServer(opts: { store?: NightlightStore } = {}) {
       deduper. Anyone clicking the demo twice, including a judge, now gets
       the same month both times.
     */
-    deduper = new Deduper();
-    const demo = generateDemoMonth(seed ?? 42);
+    h.deduper = new Deduper();
+    const month = generateDemoMonth(seed ?? 42);
+    const auth = req.headers.authorization;
     // Drive the real webhook route for fidelity: sign, post, verify, dedupe.
-    for (const event of demo.events) {
+    for (const event of month.events) {
       const envelope = JSON.stringify(toWebhookEnvelope(event));
       await app.inject({
         method: "POST",
@@ -185,14 +240,15 @@ export function buildServer(opts: { store?: NightlightStore } = {}) {
         headers: {
           "content-type": "application/json",
           "x-signature": signBody(envelope, DEMO_SECRET),
+          ...(auth ? { authorization: Array.isArray(auth) ? auth[0]! : auth } : {}),
         },
         payload: envelope,
       });
     }
-    const snap = await runtime.snapshot();
+    const snap = await h.runtime.snapshot();
     return reply.send({
       simulated: true,
-      events: demo.events.length,
+      events: month.events.length,
       incidents: snap.incidents.length,
       undisturbedNights: snap.nights.filter((n) => n.undisturbed).length,
       totalNights: snap.nights.length,
@@ -200,10 +256,12 @@ export function buildServer(opts: { store?: NightlightStore } = {}) {
     });
   });
 
-  app.get("/api/summary", async () => {
-    const snap = await runtime.snapshot();
+  app.get("/api/summary", async (req, reply) => {
+    const h = householdOf(req, reply);
+    if (!h) return;
+    const snap = await h.runtime.snapshot();
     return {
-      simulated: true,
+      simulated: h.simulated,
       baselineDays: snap.baselineDays,
       nights: snap.nights,
       undisturbedStreak: snap.undisturbedStreak,
@@ -211,31 +269,45 @@ export function buildServer(opts: { store?: NightlightStore } = {}) {
     };
   });
 
-  app.get("/api/incidents", async () => (await runtime.snapshot()).incidents);
+  app.get("/api/incidents", async (req, reply) => {
+    const h = householdOf(req, reply);
+    if (!h) return;
+    return (await h.runtime.snapshot()).incidents;
+  });
 
-  app.get("/api/effects", async () => ({
-    executions: (await runtime.snapshot()).executions,
-    journal: adapters.journal,
-  }));
+  app.get("/api/effects", async (req, reply) => {
+    const h = householdOf(req, reply);
+    if (!h) return;
+    return { executions: (await h.runtime.snapshot()).executions, journal: h.adapters.journal };
+  });
 
-  app.post("/api/incidents/ack", async (req) => {
+  app.post("/api/incidents/ack", async (req, reply) => {
+    const h = householdOf(req, reply);
+    if (!h) return;
     const body = (req.body as { json?: { at?: string } })?.json ?? {};
     const at = body.at ?? new Date().toISOString();
-    const fresh = await runtime.acknowledge(at);
+    const fresh = await h.runtime.acknowledge(at);
     return { acknowledged: true, at, newEffects: fresh.length };
   });
 
   // Night window settings: the caregiver's own hours. Changing them
   // re-derives every read model from the same event log on the next
   // request, because nights are computed, never stored.
-  app.get("/api/settings", async () => ({
-    nightWindow: runtime.config.nightWindow,
-    timezone: runtime.config.timezone,
-    watchingMinutes: runtime.config.watchingMinutes,
-    escalateMinutes: runtime.config.escalateMinutes,
-  }));
+  app.get("/api/settings", async (req, reply) => {
+    const h = householdOf(req, reply);
+    if (!h) return;
+    return {
+      nightWindow: h.runtime.config.nightWindow,
+      timezone: h.runtime.config.timezone,
+      watchingMinutes: h.runtime.config.watchingMinutes,
+      escalateMinutes: h.runtime.config.escalateMinutes,
+    };
+  });
 
   app.post("/api/settings", async (req, reply) => {
+    const h = householdOf(req, reply);
+    if (!h) return;
+    const runtime = h.runtime;
     const body = (req.body as { json?: { start?: string; end?: string } })?.json ?? {};
     const hhmm = /^([01]\d|2[0-3]):([0-5]\d)$/;
     if (!body.start || !body.end || !hhmm.test(body.start) || !hhmm.test(body.end)) {
@@ -256,17 +328,79 @@ export function buildServer(opts: { store?: NightlightStore } = {}) {
     });
   });
 
-  app.get("/api/morning-note", async () => {
-    const snap = await runtime.snapshot();
+  app.get("/api/morning-note", async (req, reply) => {
+    const h = householdOf(req, reply);
+    if (!h) return;
+    const snap = await h.runtime.snapshot();
     const lastNight = snap.nights[snap.nights.length - 1];
     if (!lastNight) {
       return { available: false, message: "No nights recorded yet." };
     }
     const note = await phraseMorningNote(lastNight, snap.undisturbedStreak);
-    return { available: true, simulated: true, ...note };
+    return { available: true, simulated: h.simulated, ...note };
   });
 
   app.get("/healthz", async () => ({ ok: true }));
+
+  // A free API key, no account: a household of your own.
+  app.post("/v1/keys", async (_req, reply) => reply.code(201).send(issuedKeyBody(issueKey())));
+
+  /*
+    Bring your own events. A keyed household takes Ring-shaped events
+    straight in, unsigned, because the key already says whose they are:
+    a judge can paste an export of their own doorbell's history, or write
+    a night by hand, and watch the same engine read it. The demo
+    household takes only signed Ring webhooks, so nobody can write into
+    the one everybody shares.
+  */
+  app.post("/api/events", async (req, reply) => {
+    const caller = callerFrom(req.headers.authorization);
+    if ("error" in caller) {
+      return reply.code(401).header("WWW-Authenticate", 'Bearer realm="nightlight"').send({ error: caller.error });
+    }
+    if (caller.space === null) {
+      return reply.code(403).send({
+        error: "The demo household takes signed Ring webhooks only. POST /v1/keys for a household of your own, then send your events here with it.",
+      });
+    }
+    const h = householdFor(caller.space);
+    const list = (req.body as { json?: { events?: unknown } })?.json?.events;
+    if (!Array.isArray(list) || list.length === 0 || list.length > 5000) {
+      return reply.code(400).send({ error: "send { events: [{ ts, type }] }, 1 to 5000 of them" });
+    }
+    const allowed = ["motion_detected", "button_press", "device_online", "device_offline"];
+    const events: RingEvent[] = [];
+    for (const [i, raw] of list.entries()) {
+      const e = raw as { ts?: unknown; type?: unknown; deviceId?: unknown; subType?: unknown };
+      if (typeof e.ts !== "string" || Number.isNaN(Date.parse(e.ts)) || typeof e.type !== "string" || !allowed.includes(e.type)) {
+        return reply.code(400).send({ error: `event ${i}: ts must be ISO 8601 and type one of ${allowed.join(", ")}` });
+      }
+      const event: RingEvent = {
+        ts: new Date(e.ts).toISOString(),
+        type: e.type as RingEventType,
+        deviceId: typeof e.deviceId === "string" ? e.deviceId : "your-doorbell",
+        requestId: `own-${caller.space}-${i}-${e.ts}`,
+      };
+      if (typeof e.subType === "string") event.subType = e.subType;
+      events.push(event);
+    }
+    events.sort((a, b) => a.ts.localeCompare(b.ts));
+    let effects = 0;
+    for (const event of events) {
+      if (event.requestId && !h.deduper.firstSeen(event.requestId)) continue;
+      effects += (await h.runtime.ingestEvent(event)).length;
+    }
+    h.simulated = false;
+    const snap = await h.runtime.snapshot();
+    return reply.send({
+      accepted: events.length,
+      newEffects: effects,
+      baselineDays: snap.baselineDays,
+      nights: snap.nights.length,
+      incidents: snap.incidents.length,
+      note: snap.baselineDays < 7 ? "Nightlight learns for seven days before it acts on anything." : "Armed: the baseline is learned.",
+    });
+  });
 
   /**
    * Resilience posture: what this deployment will do when things fail.
@@ -433,7 +567,7 @@ export function buildServer(opts: { store?: NightlightStore } = {}) {
     }
   });
 
-  registerMcp(app, runtime);
+  registerMcp(app, householdFor);
 
   return { app, runtime, adapters, ring };
 }

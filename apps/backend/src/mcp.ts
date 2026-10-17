@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import type { HouseholdRuntime } from "./household";
+import { callerFrom } from "./keys";
 
 /**
  * MCP server for Nightlight, implementing the Model Context Protocol
@@ -180,7 +181,7 @@ export function isAllowedOrigin(origin: string): boolean {
 
 export function registerMcp(
   app: FastifyInstance,
-  runtime: HouseholdRuntime,
+  householdFor: (space: string | null) => { runtime: HouseholdRuntime; simulated: boolean },
 ): void {
   const sessions = new Set<string>();
 
@@ -196,13 +197,17 @@ export function registerMcp(
   const callTool = async (
     name: string,
     args: Record<string, unknown>,
+    space: string | null = null,
   ): Promise<Record<string, unknown>> => {
+    // A key is a household of its own; no key is the labelled demo.
+    const { runtime, simulated } = householdFor(space);
     const snap = await runtime.snapshot();
     switch (name) {
       case "get_household_status": {
         const warmup = snap.baselineDays < 7;
         return textContent({
-          simulated: true,
+          simulated,
+          household: space ? "your key's own" : "the labelled demo household",
           baselineDaysObserved: snap.baselineDays,
           inWarmup: warmup,
           statusText: warmup
@@ -286,6 +291,16 @@ export function registerMcp(
   app.post("/mcp", async (req, reply) => {
     if (!checkOrigin(req, reply)) return;
 
+    // An API key is optional. No header is the demo household; a
+    // malformed one is refused rather than silently treated as open.
+    const caller = callerFrom(req.headers.authorization);
+    if ("error" in caller) {
+      return reply
+        .code(401)
+        .header("WWW-Authenticate", 'Bearer realm="nightlight"')
+        .send(rpcError(null, -32001, caller.error));
+    }
+
     const parsed = req.body as { json?: unknown; parseError?: string } | undefined;
     if (parsed?.parseError) {
       // JSON-RPC is specific here: a body the server cannot parse is -32700,
@@ -330,7 +345,7 @@ export function registerMcp(
           capabilities: { tools: { listChanged: false } },
           serverInfo: SERVER_INFO,
           instructions:
-            "Nightlight watches a household's front door at night and protects the caregiver's sleep. Ask for the household status, a night's summary, or the incident record. All data in this build is a labeled simulated household.",
+            "Nightlight watches a household's front door at night and protects the caregiver's sleep. Ask for the household status, a night's summary, or the incident record. Without a key this is a labeled simulated household; with one, it is the caller's own.",
         }),
       );
     }
@@ -365,7 +380,7 @@ export function registerMcp(
             ? (params.arguments as Record<string, unknown>)
             : {};
         try {
-          const result = await callTool(name, args);
+          const result = await callTool(name, args, caller.space);
           return reply.send(rpcResult(msg.id, result));
         } catch (err) {
           const code = (err as { code?: number }).code ?? -32603;
