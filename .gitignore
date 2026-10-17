@@ -15,3 +15,4 @@ apps/agentcore/agentcore/cdk/node_modules/
 apps/agentcore/agentcore/cdk/cdk.out/
 apps/agentcore/app/*/.venv/
 apps/agentcore/agentcore/aws-targets.json
+cdk.out.keys/
