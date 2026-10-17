@@ -76,9 +76,7 @@ export class HouseholdRuntime {
   }
 
   async ingestBatch(events: RingEvent[]): Promise<Effect[]> {
-    for (const event of events) {
-      await this.store.appendEvent(this.householdId, event);
-    }
+    await this.store.appendEvents(this.householdId, events);
     return this.executeNewEffects();
   }
 

@@ -32,6 +32,12 @@ import { callerFrom, householdIdFor, issueKey, issuedKeyBody } from "./keys";
  */
 
 const RING_SECRET = process.env.RING_WEBHOOK_SECRET ?? "";
+const ENGINE_TYPES: RingEventType[] = [
+  "motion_detected",
+  "button_press",
+  "device_online",
+  "device_offline",
+];
 const DEMO_SECRET = process.env.DEMO_WEBHOOK_SECRET ?? "nightlight-demo-secret";
 
 export function buildServer(opts: { store?: NightlightStore } = {}) {
@@ -187,13 +193,7 @@ export function buildServer(opts: { store?: NightlightStore } = {}) {
       return reply.code(200).send({ deduplicated: true });
     }
 
-    const engineTypes: RingEventType[] = [
-      "motion_detected",
-      "button_press",
-      "device_online",
-      "device_offline",
-    ];
-    if ((engineTypes as string[]).includes(webhook.eventType)) {
+    if ((ENGINE_TYPES as string[]).includes(webhook.eventType)) {
       const event: RingEvent = {
         ts: webhook.ts,
         type: webhook.eventType as RingEventType,
@@ -230,21 +230,40 @@ export function buildServer(opts: { store?: NightlightStore } = {}) {
     */
     h.deduper = new Deduper();
     const month = generateDemoMonth(seed ?? 42);
-    const auth = req.headers.authorization;
-    // Drive the real webhook route for fidelity: sign, post, verify, dedupe.
-    for (const event of month.events) {
-      const envelope = JSON.stringify(toWebhookEnvelope(event));
-      await app.inject({
-        method: "POST",
-        url: "/webhooks/ring",
-        headers: {
-          "content-type": "application/json",
-          "x-signature": signBody(envelope, DEMO_SECRET),
-          ...(auth ? { authorization: Array.isArray(auth) ? auth[0]! : auth } : {}),
-        },
-        payload: envelope,
-      });
+    /*
+      Every event is signed, verified, parsed and deduplicated exactly as a
+      Ring webhook is, with the same functions, and then the month is
+      ingested as one batch.
+
+      It used to be posted through the webhook route one event at a time,
+      and each one replayed the whole log and re-claimed every effect so
+      far: about six hundred database calls, and fourteen to seventeen
+      seconds behind a button on the live site. Measured while preparing
+      the demo video, where it would have been a quarter of a minute of
+      "Replaying...". Effects are derived from the whole timeline either
+      way, so the result is the same month; the replay-idempotence tests
+      say so.
+    */
+    const batch: RingEvent[] = [];
+    for (const demoEvent of month.events) {
+      const envelope = JSON.stringify(toWebhookEnvelope(demoEvent));
+      const raw = Buffer.from(envelope, "utf8");
+      if (!verifySignature(raw, signBody(envelope, DEMO_SECRET), DEMO_SECRET)) {
+        return reply.code(500).send({ error: "a replayed event failed its own signature" });
+      }
+      const webhook = parseWebhook(JSON.parse(envelope));
+      if (!h.deduper.firstSeen(webhook.requestId)) continue;
+      if (!(ENGINE_TYPES as string[]).includes(webhook.eventType)) continue;
+      const event: RingEvent = {
+        ts: webhook.ts,
+        type: webhook.eventType as RingEventType,
+        deviceId: webhook.deviceId ?? "unknown-device",
+        requestId: webhook.requestId,
+      };
+      if (webhook.subType) event.subType = webhook.subType;
+      batch.push(event);
     }
+    await h.runtime.ingestBatch(batch);
     const snap = await h.runtime.snapshot();
     return reply.send({
       simulated: true,
@@ -385,11 +404,8 @@ export function buildServer(opts: { store?: NightlightStore } = {}) {
       events.push(event);
     }
     events.sort((a, b) => a.ts.localeCompare(b.ts));
-    let effects = 0;
-    for (const event of events) {
-      if (event.requestId && !h.deduper.firstSeen(event.requestId)) continue;
-      effects += (await h.runtime.ingestEvent(event)).length;
-    }
+    const fresh = events.filter((e) => !e.requestId || h.deduper.firstSeen(e.requestId));
+    const effects = (await h.runtime.ingestBatch(fresh)).length;
     h.simulated = false;
     const snap = await h.runtime.snapshot();
     return reply.send({

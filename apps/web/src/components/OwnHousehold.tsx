@@ -101,7 +101,7 @@ export function OwnHousehold() {
             <button type="button" onClick={() => void replay()} disabled={busy} className={button}>
               {busy ? "Replaying…" : "Replay a month into my household"}
             </button>
-            <p className="text-sm text-muted">Through the same signed-webhook path Ring uses. The demo household is not touched.</p>
+            <p className="text-sm text-muted">Every event signed and verified the way Ring's are. The demo household is not touched.</p>
           </div>
 
           {rows && (

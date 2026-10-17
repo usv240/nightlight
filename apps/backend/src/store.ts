@@ -30,6 +30,8 @@ export interface EffectExecutionRecord {
 
 export interface NightlightStore {
   appendEvent(householdId: string, event: RingEvent): Promise<void>;
+  /** Many events at once. Same effect as appending each, fewer round trips. */
+  appendEvents(householdId: string, events: RingEvent[]): Promise<void>;
   listEvents(householdId: string): Promise<RingEvent[]>;
   appendAck(householdId: string, ack: CaregiverAck): Promise<void>;
   listAcks(householdId: string): Promise<CaregiverAck[]>;
@@ -52,6 +54,10 @@ export class MemoryStore implements NightlightStore {
     const arr = this.events.get(h) ?? [];
     arr.push(event);
     this.events.set(h, arr);
+  }
+
+  async appendEvents(h: string, events: RingEvent[]): Promise<void> {
+    for (const e of events) await this.appendEvent(h, e);
   }
 
   async listEvents(h: string): Promise<RingEvent[]> {
@@ -154,6 +160,28 @@ export class DynamoStore implements NightlightStore {
         },
       }),
     );
+  }
+
+  /**
+   * Twenty-five puts per request, the BatchWrite limit, and a retry for
+   * whatever DynamoDB hands back unprocessed. A month is about two hundred
+   * events: nine requests instead of two hundred.
+   */
+  async appendEvents(h: string, events: RingEvent[]): Promise<void> {
+    for (let i = 0; i < events.length; i += 25) {
+      let pending: Record<string, unknown>[] = events.slice(i, i + 25).map((event) => ({
+        PutRequest: {
+          Item: { pk: this.pk(h), sk: `EVENT#${event.ts}#${event.requestId ?? "no-id"}`, ...event },
+        },
+      }));
+      for (let attempt = 0; pending.length > 0 && attempt < 5; attempt++) {
+        const res = await this.doc.send(
+          new BatchWriteCommand({ RequestItems: { [this.tableName]: pending } }),
+        );
+        pending = (res.UnprocessedItems?.[this.tableName] as Record<string, unknown>[] | undefined) ?? [];
+      }
+      if (pending.length > 0) throw new Error("DynamoDB left events unwritten after five attempts");
+    }
   }
 
   async listEvents(h: string): Promise<RingEvent[]> {
