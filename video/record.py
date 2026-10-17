@@ -1006,8 +1006,31 @@ def act_alexa_session(r: Recorder):
     r.click_at(MCP_START, settle=0.3)
     r.page.locator("#mcp-steps > li").nth(2).wait_for(state="visible", timeout=60_000)
     r.scroll_to("#mcp-steps", offset=260)
-    r.on_phrase("Nightlight answers")
+    r.on_phrase("It answers")
     r.point_at("#mcp-steps > li", nth=-1)
+
+
+OWN_KEY = "#alexa button:has-text('Get an API key')"
+OWN_REPLAY = "#alexa button:has-text('Replay a month into my household')"
+
+
+def act_own_household(r: Recorder):
+    # The key panel sits under the session panel; the shot starts on its
+    # button, and both presses happen while the line is spoken. The replay
+    # answers in about half a second since it was batched; before that it
+    # took fifteen, which is why this beat waited for that change.
+    # Warm the function first: on the first take the table arrived with half
+    # a second of the line left, and the proof is the table.
+    r.warm(f"{API}/api/summary")
+    r.scroll_to("#alexa span:text-is('Your own household')", offset=150)
+    r.hold(0.3)
+    r.point_at(OWN_KEY)
+    yield
+    r.click_at(OWN_KEY, settle=0.2)
+    r.page.locator(OWN_REPLAY).wait_for(state="visible", timeout=30_000)
+    r.click_at(OWN_REPLAY, settle=0.2)
+    r.page.locator("#alexa td:has-text('The shared demo, unchanged')").wait_for(state="visible", timeout=30_000)
+    r.point_at("#alexa td:has-text('The shared demo, unchanged')")
 
 
 def act_real_homes(r: Recorder):
@@ -1025,7 +1048,7 @@ def act_why(r: Recorder):
     r.hold(0.3)
     r.point_at(STAT_CARD, nth=3)
     yield
-    r.on_phrase("Nightlight needs")
+    r.on_phrase("Nightlight stores")
     r.scroll_to("text=Nightlight never stores", offset=420)
     r.point_at("text=Nightlight never stores")
     r.hold(1.6)
@@ -1109,6 +1132,7 @@ ACTIONS = {
     "family_voice": act_family_voice,
     "caregiver": act_caregiver,
     "alexa_session": act_alexa_session,
+    "own_household": act_own_household,
     "real_homes": act_real_homes,
     "why_privacy": act_why,
     "landing_close": act_landing_close,
@@ -1149,7 +1173,7 @@ def main() -> int:
     reset_demo()
 
     with sync_playwright() as pw:
-        browser = pw.chromium.launch(args=["--force-color-profile=srgb"])
+        browser = pw.chromium.launch(channel="chrome", args=["--force-color-profile=srgb"])
         context = browser.new_context(
             viewport={"width": WIDTH, "height": HEIGHT},
             record_video_dir=str(video_dir),

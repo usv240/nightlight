@@ -189,17 +189,35 @@ BEATS: list[Beat] = [
         action="alexa_session",
         pause_before=0.5,
         say=(
-            "And in the morning, a caregiver can simply ask an assistant how "
-            "the night went. Nightlight answers over the Model Context "
-            "Protocol, the way Alexa+ talks to tools."
+            "In the morning, a caregiver can simply ask an assistant how the "
+            "night went. It answers over the Model Context Protocol that "
+            "Alexa+ uses."
         ),
-        note="The one place the video shows the Alexa+ entry. The cut if time is short.",
+        note=(
+            "The one place the video shows the Alexa+ entry. Four words "
+            "shorter in the October re-cut, to pay for the next beat."
+        ),
+    ),
+    Beat(
+        key="own-household",
+        action="own_household",
+        pause_before=0.5,
+        min_hold=8.6,
+        say=(
+            "Anyone can take a free API key for a household of their own, "
+            "and bring their own doorbell's events into it."
+        ),
+        note=(
+            "Added 2026-10-17. The live site's key panel: a key issued, a "
+            "month replayed into it, the shared demo shown unchanged beside "
+            "it. Something a judge can press themselves."
+        ),
     ),
     Beat(
         key="real-homes",
         action="real_homes",
         pause_before=0.6,
-        min_hold=16.5,
+        min_hold=15.0,
         say=(
             "On thirty-four real homes from a public research corpus, a "
             "standard door alarm would have woken the caregiver fourteen "
@@ -224,8 +242,8 @@ BEATS: list[Beat] = [
         pause_before=0.5,
         say=(
             "Seventy percent of caregivers who moved a relative into care "
-            "cited the nights. Nightlight needs no new hardware, and it "
-            "stores no video, no audio, and nothing that identifies a person."
+            "cited the nights. Nightlight stores no video, no audio, and "
+            "nothing that identifies a person."
         ),
         note="Names the mechanism without claiming Nightlight changes it.",
     ),
@@ -233,7 +251,7 @@ BEATS: list[Beat] = [
         key="close",
         action="landing_close",
         pause_before=0.5,
-        min_hold=15.5,
+        min_hold=15.0,
         say=(
             "It's not about detecting more. It's about knowing when waking "
             "someone is actually needed. Nightlight. Let the house respond "

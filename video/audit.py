@@ -111,6 +111,9 @@ def main() -> int:
          "Claude on Amazon Bedrock writes the morning note" in say, "caregiver beat"),
         ("the assistant question is shown",
          "assistant" in keys and "#mcp-steps" in src["record"], "assistant beat"),
+        ("a household of your own is pressed live",
+         "own-household" in keys and "Get an API key" in src["record"]
+         and "bring their own doorbell" in say, "own-household beat, October re-cut"),
         ("14,068 and 774 are on screen, alone",
          "#proof div.grid" in src["record"] and "fourteen thousand" in say, "real-homes beat"),
         ("the restraint sentence is kept",
