@@ -31,7 +31,7 @@ async function summary(key: string | null): Promise<Summary> {
 export function OwnHousehold() {
   const [key, setKey] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
-  const [rows, setRows] = useState<{ mine: Summary; demo: Summary; seed: number } | null>(null);
+  const [rows, setRows] = useState<{ before: Summary; mine: Summary; demo: Summary; seed: number } | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const issue = async () => {
@@ -54,6 +54,7 @@ export function OwnHousehold() {
     setError(null);
     try {
       const seed = 100 + Math.floor(Math.random() * 900);
+      const before = await summary(key);
       const res = await fetch(`${BACKEND}/api/demo/replay`, {
         method: "POST",
         headers: { "content-type": "application/json", authorization: `Bearer ${key}` },
@@ -61,7 +62,7 @@ export function OwnHousehold() {
       });
       if (!res.ok) throw new Error(`replay: HTTP ${res.status}`);
       const [mine, demo] = await Promise.all([summary(key), summary(null)]);
-      setRows({ mine, demo, seed });
+      setRows({ before, mine, demo, seed });
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
     } finally {
@@ -104,6 +105,7 @@ export function OwnHousehold() {
           </div>
 
           {rows && (
+            <>
             <table className="mt-6 w-full text-sm">
               <thead>
                 <tr className="text-left text-muted">
@@ -115,7 +117,13 @@ export function OwnHousehold() {
               </thead>
               <tbody>
                 <tr className="border-t border-line">
-                  <td className="py-2 text-ink">Yours (simulated month, seed {rows.seed})</td>
+                  <td className="py-2 text-ink">Yours, before the replay</td>
+                  <td className="py-2 font-mono text-[12px]">{rows.before.nights.length}</td>
+                  <td className="py-2 font-mono text-[12px]">{slept(rows.before)}</td>
+                  <td className="py-2 font-mono text-[12px]">{rows.before.incidentCount}</td>
+                </tr>
+                <tr className="border-t border-line">
+                  <td className="py-2 text-ink">Yours, after (simulated month, seed {rows.seed})</td>
                   <td className="py-2 font-mono text-[12px]">{rows.mine.nights.length}</td>
                   <td className="py-2 font-mono text-[12px]">{slept(rows.mine)}</td>
                   <td className="py-2 font-mono text-[12px]">{rows.mine.incidentCount}</td>
@@ -128,6 +136,11 @@ export function OwnHousehold() {
                 </tr>
               </tbody>
             </table>
+            <p className="mt-3 text-xs text-muted">
+              The simulated month scripts the same three incidents every time; the seed moves their timings. Your own
+              events, below, are what make a household genuinely different.
+            </p>
+            </>
           )}
 
           <p className="mt-6 text-sm text-muted">Bring your own doorbell&apos;s events instead, with the same key:</p>
