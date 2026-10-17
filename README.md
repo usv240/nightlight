@@ -28,6 +28,29 @@ Built for the Build, Ship, Shape: Amazon Developer Hackathon (Ring track, plus t
 
 Detection is deterministic and explainable end to end. Language models are used only to phrase summaries, never to decide.
 
+## A household of your own
+
+Everything on the site is one labelled demo household that everybody
+shares, and it needs no key. For a household of your own, take a free
+key with no account:
+
+```
+API=https://qdvxx267lgnsitq242aplz722a0zuien.lambda-url.us-east-1.on.aws
+curl -X POST $API/v1/keys
+# a month through the real signed-webhook path, into your household only
+curl -X POST $API/api/demo/replay -H "authorization: Bearer <key>"
+# or bring your own doorbell's events
+curl -X POST $API/api/events -H "authorization: Bearer <key>" -H "content-type: application/json" \
+  -d '{"events":[{"ts":"2026-10-14T02:40:00Z","type":"motion_detected"}]}'
+curl $API/api/summary -H "authorization: Bearer <key>"
+```
+
+The same key works on `/mcp`, so an assistant answers about your
+household. The demo household takes signed Ring webhooks only, so
+nobody can write into the one everybody shares. Nothing about a key is
+stored. The site's Alexa+ section issues one and replays a month into
+it, live.
+
 ## Run it
 
 ```
