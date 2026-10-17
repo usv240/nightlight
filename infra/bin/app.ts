@@ -93,7 +93,7 @@ class NightlightStack extends Stack {
       cors: {
         allowedOrigins: ["*"],
         allowedMethods: [HttpMethod.ALL],
-        allowedHeaders: ["*", "authorization"],
+        allowedHeaders: ["*"],
         exposedHeaders: ["MCP-Session-Id"],
       },
     });
