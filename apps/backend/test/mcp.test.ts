@@ -59,7 +59,7 @@ describe("MCP server (Streamable HTTP, 2025-11-25)", () => {
     expect(body.result.serverInfo.name).toBe("nightlight-mcp");
     expect(body.result.capabilities.tools).toBeDefined();
     sessionId = res.headers["mcp-session-id"] as string;
-    expect(sessionId).toMatch(/[0-9a-f-]{36}/);
+    expect(sessionId).toMatch(/^[0-9a-f]{16}\.[0-9a-f]{24}$/);
   });
 
   it("rejects non-initialize requests without a session", async () => {
