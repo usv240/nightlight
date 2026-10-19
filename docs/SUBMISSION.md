@@ -174,3 +174,7 @@ Amazon Bedrock (the morning note through a three-model ladder with a determinist
 - Feature requests (optional field): https://github.com/usv240/nightlight/blob/main/docs/FEATURE_REQUESTS.md
 - Accessibility audit (100 accessibility, 100 best practices, 100 SEO): https://github.com/usv240/nightlight/blob/main/docs/ACCESSIBILITY.md
 - API: https://qdvxx267lgnsitq242aplz722a0zuien.lambda-url.us-east-1.on.aws
+
+## Built with
+
+Ring Partner API; MCP server, spec 2025-11-25, Streamable HTTP; Agent Skill; Amazon Bedrock (Claude); Strands Agents SDK; Amazon Bedrock AgentCore Runtime; Amazon Polly; Amazon DynamoDB, AWS Lambda, Amazon S3, Amazon CloudFront, AWS CDK; npm. Each, with the file that uses it, is in the README's Built with table.

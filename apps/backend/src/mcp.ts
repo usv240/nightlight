@@ -448,3 +448,6 @@ export function registerMcp(
     return reply.code(404).send();
   });
 }
+
+/** Every tool name, for the Agent Skill test. */
+export const TOOL_NAMES = TOOLS.map((t) => t.name);

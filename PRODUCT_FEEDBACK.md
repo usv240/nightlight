@@ -61,3 +61,13 @@ Draft of the hackathon submission's product-feedback answer, maintained as we bu
 
 - Ring live-device experience, once developer verification clears and a playground access token is available.
 - Final word on Bedrock output quality across a month of real morning notes.
+
+## Agent Skills
+
+**Used for:** `skills/nightlight/SKILL.md`, which tells an agent what the product is, which MCP tools to call in what order, and what it must never say. A test checks it names every tool on the server.
+
+**What worked well:** plain markdown an agent reads directly, so the product's rules travel with its tools.
+
+**What needs work:** we found no public way to load a skill into Alexa+ ourselves and watch it run, so ours is checked against the MCP server by a test rather than end to end in Alexa+.
+
+**Would we build with it again:** yes.

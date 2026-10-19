@@ -94,6 +94,22 @@ apps/backend               Fastify service: webhook intake, effects, caregiver A
 
 All demo data is simulated and marked as such in every response and UI. Nightlight is a home safety aid: it does not diagnose, treat, or prevent any medical condition, and it does not replace supervision or professional care advice. In an emergency, call your local emergency number.
 
+## Built with
+
+Every tool this project uses, and the file that uses it.
+
+| Tool | What it does here | Where |
+|---|---|---|
+| Ring Partner API | signed webhook intake, event history, snapshots and chime audio | [`apps/backend/src/ring.ts`](apps/backend/src/ring.ts) |
+| MCP server, spec 2025-11-25, Streamable HTTP | the Alexa+ surface: five household tools, signed sessions, conformance-probed live | [`apps/backend/src/mcp.ts`](apps/backend/src/mcp.ts) |
+| Agent Skill | tells an agent how to use the five tools; a test checks it names every tool | [`skills/nightlight/SKILL.md`](skills/nightlight/SKILL.md) |
+| Amazon Bedrock (Claude) | writes the caregiver's morning note from facts the engine computed | [`apps/backend/src`](apps/backend/src) |
+| Strands Agents SDK | the Week Review agent, from the MCP tools only | [`apps/agent/week_review.py`](apps/agent/week_review.py) |
+| Amazon Bedrock AgentCore Runtime | hosts the Week Review agent as an invocable endpoint | [`apps/agentcore`](apps/agentcore) |
+| Amazon Polly | the fallback voice at the door when no family recording exists | [`apps/backend/src/voice.ts`](apps/backend/src/voice.ts) |
+| Amazon DynamoDB, AWS Lambda, Amazon S3, Amazon CloudFront, AWS CDK | the event log with exactly-once actions, the service, the site, one deploy | [`infra`](infra) |
+| npm | ring-webhook-kit, the open-source webhook package | [`packages`](packages) |
+
 ## License
 
 MIT. See LICENSE.
