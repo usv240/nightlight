@@ -12,7 +12,7 @@ Built for the Build, Ship, Shape: Amazon Developer Hackathon (Ring track, plus t
 
 ## Live
 
-- Demo video (2:58): https://youtu.be/Ghcd8D1JSQQ
+- Demo video (2:58): https://youtu.be/NU24DL-NDZk
 - Site: https://d28hskpupjctiz.cloudfront.net
 - API: https://qdvxx267lgnsitq242aplz722a0zuien.lambda-url.us-east-1.on.aws (try `/api/summary`, `/api/morning-note`, or the MCP endpoint at `/mcp`)
 - Running on AWS: Lambda, DynamoDB, Bedrock (Claude), S3 and CloudFront, deployed by the CDK stack in `infra/`. Integration details in `docs/AWS.md`.

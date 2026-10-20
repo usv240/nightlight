@@ -164,7 +164,7 @@ Amazon Bedrock (the morning note through a three-model ladder with a determinist
 
 ## Links
 
-- Demo video (2:58, under 3 minutes): https://youtu.be/Ghcd8D1JSQQ. Beats and how it was filmed: docs/VIDEO_SCRIPT.md
+- Demo video (2:58, under 3 minutes): https://youtu.be/NU24DL-NDZk. Beats and how it was filmed: docs/VIDEO_SCRIPT.md
 - Live site and demo: https://d28hskpupjctiz.cloudfront.net
 - Repository (MIT): https://github.com/usv240/nightlight
 - Evaluation: https://github.com/usv240/nightlight/blob/main/docs/EVAL.md
