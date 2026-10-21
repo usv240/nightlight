@@ -84,3 +84,8 @@ On-demand DynamoDB, one small Lambda, one CloudFront distribution, and per-call 
 
 - The demo API is unauthenticated by design (single simulated household, resettable). A production deployment adds per-household auth in front of every route; API Gateway usage plans with API keys are the planned path for the public scoring API.
 - MCP session state is in-memory per Lambda instance; production would move sessions to the same DynamoDB table.
+
+## What was deliberately not used
+
+- Kiro and Kiro Crew: not used. The build ran in one coding agent from the first commit; a second workspace mid-window would have added nothing a judge can see. Every AWS integration here is a service the product calls at run time.
+- SageMaker: not used. Detection is deterministic and unit-tested by design, so a caregiver can be told exactly why they were or were not woken; nothing trains a model.

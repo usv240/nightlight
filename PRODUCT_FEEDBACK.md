@@ -71,3 +71,8 @@ Draft of the hackathon submission's product-feedback answer, maintained as we bu
 **What needs work:** we found no public way to load a skill into Alexa+ ourselves and watch it run, so ours is checked against the MCP server by a test rather than end to end in Alexa+.
 
 **Would we build with it again:** yes.
+
+## Not used, and why
+
+- Kiro and Kiro Crew: not used. The build ran in one coding agent from the first commit; a second workspace mid-window would have added nothing a judge can see. Every AWS integration here is a service the product calls at run time.
+- SageMaker: not used. Detection is deterministic and unit-tested by design, so a caregiver can be told exactly why they were or were not woken; nothing trains a model.
