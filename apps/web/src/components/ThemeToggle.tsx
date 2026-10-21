@@ -2,43 +2,37 @@
 
 import { useEffect, useState } from "react";
 
-type Mode = "system" | "light" | "dark";
-const ORDER: Mode[] = ["system", "light", "dark"];
+type Mode = "light" | "dark";
 const LABEL: Record<Mode, string> = {
-  system: "Theme: system",
   light: "Theme: light",
   dark: "Theme: dark",
 };
 
-/** Three-state theme toggle: System, Light, Dark. Persists; system stamps nothing. */
+/** Light by default whatever the system says; dark is a choice, remembered. */
 export function ThemeToggle() {
-  const [mode, setMode] = useState<Mode>("system");
+  const [mode, setMode] = useState<Mode>("light");
 
   useEffect(() => {
     try {
       const stored = localStorage.getItem("nl-theme");
-      if (stored === "light" || stored === "dark") setMode(stored);
+      if (stored === "dark") setMode("dark");
     } catch {
-      // storage unavailable; stay on system
+      // storage unavailable; stay light
     }
   }, []);
 
   const apply = (next: Mode) => {
     setMode(next);
-    const root = document.documentElement;
-    if (next === "system") root.removeAttribute("data-theme");
-    else root.setAttribute("data-theme", next);
+    document.documentElement.setAttribute("data-theme", next);
     try {
-      if (next === "system") localStorage.removeItem("nl-theme");
-      else localStorage.setItem("nl-theme", next);
+      localStorage.setItem("nl-theme", next);
     } catch {
       // ignore
     }
   };
 
   const cycle = () => {
-    const next = ORDER[(ORDER.indexOf(mode) + 1) % ORDER.length]!;
-    apply(next);
+    apply(mode === "dark" ? "light" : "dark");
   };
 
   return (

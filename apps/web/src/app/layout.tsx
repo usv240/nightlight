@@ -30,7 +30,7 @@ export const viewport: Viewport = {
   data-theme; the default (system) stamps nothing and the CSS media query
   decides. Stored choice read inside try/catch: storage can be unavailable.
 */
-const themeScript = `(function(){try{var t=localStorage.getItem("nl-theme");if(t==="dark"||t==="light"){document.documentElement.setAttribute("data-theme",t);}}catch(e){}})();`;
+const themeScript = `(function(){try{var t=localStorage.getItem("nl-theme");document.documentElement.setAttribute("data-theme",t==="dark"?"dark":"light");}catch(e){}})();`;
 
 export default function RootLayout({
   children,
