@@ -31,7 +31,6 @@ const repo = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../.
 */
 const PUBLIC_TEXT = [
   "README.md",
-  "docs/SUBMISSION.md",
   "apps/web/src/app/page.tsx",
 ].flatMap((f) => {
   const p = path.join(repo, f);

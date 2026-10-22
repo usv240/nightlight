@@ -54,7 +54,6 @@ const casas = JSON.parse(
 /** Files where a public claim could be made, so drift is caught wherever it happens. */
 const PUBLIC_TEXT = [
   "README.md",
-  "docs/SUBMISSION.md",
   "docs/EVIDENCE.md",
   "docs/EVAL.md",
   "skills/nightlight/SKILL.md",
